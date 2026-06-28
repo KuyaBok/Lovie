@@ -80,6 +80,13 @@ document.addEventListener("DOMContentLoaded", () => {
     initMusicPlayer();
     setFooterYear();
     updateNames();
+    initInstallPrompt();
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch((error) => {
+            console.error('Service Worker registration failed:', error);
+        });
+    }
 });
 
 // ==========================================
@@ -90,6 +97,48 @@ function updateNames() {
     const name2El = document.querySelector(".hero-name-2");
     if (name1El) name1El.textContent = CONFIG.name1;
     if (name2El) name2El.textContent = CONFIG.name2;
+}
+
+let deferredInstallPrompt = null;
+
+function initInstallPrompt() {
+    const installBtn = document.getElementById("installBtn");
+    const installPromptText = document.getElementById("installPromptText");
+    if (!installBtn || !installPromptText) return;
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+
+        setTimeout(() => {
+            installBtn.classList.remove("hidden");
+            installPromptText.classList.remove("hidden");
+            installBtn.closest('.install-area')?.classList.add('visible');
+        }, 1400);
+    });
+
+    installBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+
+        deferredInstallPrompt.prompt();
+        const choiceResult = await deferredInstallPrompt.userChoice;
+
+        if (choiceResult.outcome === "accepted") {
+            console.log("User accepted the app install prompt");
+        } else {
+            console.log("User dismissed the app install prompt");
+        }
+
+        deferredInstallPrompt = null;
+        installBtn.classList.add("hidden");
+        installPromptText.classList.add("hidden");
+    });
+
+    window.addEventListener("appinstalled", () => {
+        console.log("App installed successfully");
+        installBtn.classList.add("hidden");
+        installPromptText.classList.add("hidden");
+    });
 }
 
 // ==========================================

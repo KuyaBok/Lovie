@@ -9,6 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d67f87">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
     <!-- Floating elements -->
@@ -63,6 +68,10 @@
                     <div class="scroll-dot"></div>
                 </div>
             </div>
+        </div>
+        <div class="install-area">
+            <button class="install-btn hidden" id="installBtn">Install App</button>
+            <p class="install-message hidden" id="installPromptText">Add this page to your home screen for a lovely shortcut.</p>
         </div>
         <div class="hero-petals" id="heroPetals"></div>
     </section>
@@ -143,9 +152,10 @@
         </button>
     </div>
 
-    <!-- Audio element - replace src with your own song -->
+    <!-- Audio element - local music file -->
     <audio id="bgMusic" loop preload="auto">
-        <!-- Add your music file here: <source src="music/your-song.mp3" type="audio/mpeg"> -->
+        <source src="music/YTDown_YouTube_Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Ly_Media_zgaCZOQCpp8_009_128k.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
     </audio>
 
     <script src="script.js"></script>
