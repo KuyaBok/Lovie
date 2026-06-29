@@ -1,7 +1,8 @@
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyB87vRHppmk@l1iKh1fv7Ain3jL0chXv8U",
+  apiKey: "AIzaSyB87vRHppmk0l1iKh1fv7Ain3jL0chXv8U",
   authDomain: "love-22c76.firebaseapp.com",
+  databaseURL: "https://love-22c76-default-rtdb.firebaseio.com",
   projectId: "love-22c76",
   storageBucket: "love-22c76.firebasestorage.app",
   messagingSenderId: "333538654885",

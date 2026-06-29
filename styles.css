@@ -2048,6 +2048,40 @@ body {
 .gallery-placeholder-8 { background: linear-gradient(135deg, #b5c4b1, #c9d4c0); }
 .gallery-placeholder-9 { background: linear-gradient(135deg, #c4a0a0, #d4b896); }
 
+/* --- Install Footer Button --- */
+.footer-install {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+}
+
+.footer-install-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #c54f69, #a84060);
+    color: var(--white);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(197, 79, 105, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 20;
+    position: relative;
+}
+
+.footer-install-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(197, 79, 105, 0.35);
+}
+
+.footer-install-btn.hidden {
+    display: none;
+}
+
 /* --- Login Page Styles --- */
 .login-overlay {
     position: fixed;

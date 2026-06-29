@@ -102,98 +102,82 @@ function updateNames() {
 let deferredInstallPrompt = null;
 
 function initInstallPrompt() {
-    const installBtn = document.getElementById("installBtn");
-    const installPromptText = document.getElementById("installPromptText");
-    if (!installBtn || !installPromptText) return;
+    const footer = document.querySelector(".footer");
+    let installBtn = document.getElementById("installBtn");
+
+    if (!installBtn && footer) {
+        const installWrapper = document.createElement("div");
+        installWrapper.className = "footer-install";
+        installWrapper.innerHTML = '<button class="footer-install-btn" id="installBtn" type="button">Install App</button>';
+        footer.appendChild(installWrapper);
+        installBtn = document.getElementById("installBtn");
+    }
+
+    if (!installBtn) return;
 
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
     const isAppleDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
 
-    // Hide if already installed as app
     if (isStandalone) {
         installBtn.classList.add("hidden");
-        installPromptText.classList.add("hidden");
         return;
     }
 
-    const showInstallUI = (message, buttonLabel = "Install App") => {
-        installBtn.textContent = buttonLabel;
-        installPromptText.textContent = message;
+    const showInstallUI = () => {
         installBtn.classList.remove("hidden");
-        installPromptText.classList.remove("hidden");
-        installBtn.closest(".install-area")?.classList.add("visible");
+        installBtn.style.display = "inline-flex";
     };
 
     const hideInstallUI = () => {
         installBtn.classList.add("hidden");
-        installPromptText.classList.add("hidden");
-        installBtn.closest(".install-area")?.classList.remove("visible");
     };
 
-    // Try to get the beforeinstallprompt event
     window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredInstallPrompt = event;
-        showInstallUI(
-            "Install this lovely page to your home screen for quick access.",
-            "Install App"
-        );
+        showInstallUI();
     });
 
-    installBtn.addEventListener("click", async () => {
-        // If we have the native install prompt, use it
+    installBtn.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
         if (deferredInstallPrompt) {
             deferredInstallPrompt.prompt();
             const choiceResult = await deferredInstallPrompt.userChoice;
-
             if (choiceResult.outcome === "accepted") {
-                console.log("User accepted the app install prompt");
                 hideInstallUI();
-            } else {
-                console.log("User dismissed the app install prompt");
             }
-
             deferredInstallPrompt = null;
             return;
         }
 
-        // Manual instructions for each platform
         if (isAppleDevice) {
             alert(
-                "📱 How to Add to Home Screen:\n\n" +
-                "1. Tap the Share button (square with arrow)\n" +
-                "2. Scroll down and tap 'Add to Home Screen'\n" +
-                "3. Tap 'Add' to confirm"
+                "📱 To add this page to your home screen:\n\n" +
+                "1. Tap the Share button\n" +
+                "2. Tap 'Add to Home Screen'\n" +
+                "3. Tap 'Add'"
             );
         } else {
             alert(
-                "🔧 How to Install:\n\n" +
-                "1. Tap the menu button (⋮ or ☰)\n" +
-                "2. Select 'Install app' or 'Add to Home screen'\n" +
-                "3. Confirm when prompted"
+                "🔧 To install this page as an app:\n\n" +
+                "1. Open your browser menu\n" +
+                "2. Choose 'Install app' or 'Add to Home screen'\n" +
+                "3. Confirm"
             );
         }
     });
 
     window.addEventListener("appinstalled", () => {
-        console.log("App installed successfully");
         hideInstallUI();
     });
 
-    // Always show the button (don't wait for event)
-    // Use a delay to let beforeinstallprompt fire if available
     setTimeout(() => {
-        // Only show if beforeinstallprompt hasn't fired yet
         if (!deferredInstallPrompt && !isStandalone) {
-            showInstallUI(
-                isAppleDevice
-                    ? "Tap to add this page to your home screen"
-                    : "Install this page as an app for offline access",
-                "Install App"
-            );
+            showInstallUI();
         }
-    }, 800);
+    }, 300);
 }
 
 // ==========================================

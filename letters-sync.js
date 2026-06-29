@@ -5,25 +5,29 @@ let allLetters = [];
 function initLettersSync() {
     // Check if user is logged in
     requireLogin();
-    
+
+    if (!window.firebase || !firebase.database) {
+        console.error('Firebase database is not available');
+        return;
+    }
+
     // Initialize Firebase reference
-    lettersRef = firebase.database().ref('letters');
-    
+    lettersRef = database.ref('letters');
+
     // Load existing letters and listen for changes
     lettersRef.on('value', (snapshot) => {
         allLetters = [];
         const data = snapshot.val();
-        
+
         if (data) {
             Object.values(data).forEach(letter => {
-                allLetters.push(letter);
+                if (letter && typeof letter === 'object') {
+                    allLetters.push(letter);
+                }
             });
         }
-        
-        // Sort by date (newest first)
-        allLetters.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        
-        // Render all letters
+
+        allLetters.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
         renderLetters();
     });
 }
