@@ -107,11 +107,17 @@ function initInstallPrompt() {
     if (!installBtn || !installPromptText) return;
 
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
     const isAppleDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || isTouchDevice;
+    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
 
-    const showInstallUI = (message, buttonLabel = isAppleDevice ? "Add to Home Screen" : "Install App") => {
+    // Hide if already installed as app
+    if (isStandalone) {
+        installBtn.classList.add("hidden");
+        installPromptText.classList.add("hidden");
+        return;
+    }
+
+    const showInstallUI = (message, buttonLabel = "Install App") => {
         installBtn.textContent = buttonLabel;
         installPromptText.textContent = message;
         installBtn.classList.remove("hidden");
@@ -125,11 +131,7 @@ function initInstallPrompt() {
         installBtn.closest(".install-area")?.classList.remove("visible");
     };
 
-    if (isStandalone) {
-        hideInstallUI();
-        return;
-    }
-
+    // Try to get the beforeinstallprompt event
     window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredInstallPrompt = event;
@@ -140,30 +142,36 @@ function initInstallPrompt() {
     });
 
     installBtn.addEventListener("click", async () => {
+        // If we have the native install prompt, use it
         if (deferredInstallPrompt) {
             deferredInstallPrompt.prompt();
             const choiceResult = await deferredInstallPrompt.userChoice;
 
             if (choiceResult.outcome === "accepted") {
                 console.log("User accepted the app install prompt");
+                hideInstallUI();
             } else {
                 console.log("User dismissed the app install prompt");
             }
 
             deferredInstallPrompt = null;
-            hideInstallUI();
             return;
         }
 
+        // Manual instructions for each platform
         if (isAppleDevice) {
-            showInstallUI(
-                "On iPhone or iPad, tap Share and choose Add to Home Screen.",
-                "Add to Home Screen"
+            alert(
+                "📱 How to Add to Home Screen:\n\n" +
+                "1. Tap the Share button (square with arrow)\n" +
+                "2. Scroll down and tap 'Add to Home Screen'\n" +
+                "3. Tap 'Add' to confirm"
             );
-        } else if (isMobile) {
-            showInstallUI(
-                "Open your browser menu and choose Install App or Add to Home Screen.",
-                "Install App"
+        } else {
+            alert(
+                "🔧 How to Install:\n\n" +
+                "1. Tap the menu button (⋮ or ☰)\n" +
+                "2. Select 'Install app' or 'Add to Home screen'\n" +
+                "3. Confirm when prompted"
             );
         }
     });
@@ -173,16 +181,19 @@ function initInstallPrompt() {
         hideInstallUI();
     });
 
-    if (isMobile && !deferredInstallPrompt) {
-        setTimeout(() => {
+    // Always show the button (don't wait for event)
+    // Use a delay to let beforeinstallprompt fire if available
+    setTimeout(() => {
+        // Only show if beforeinstallprompt hasn't fired yet
+        if (!deferredInstallPrompt && !isStandalone) {
             showInstallUI(
                 isAppleDevice
-                    ? "Tap here for easy steps to add this page to your home screen."
-                    : "Tap to install or add this page to your home screen.",
-                isAppleDevice ? "Add to Home Screen" : "Install App"
+                    ? "Tap to add this page to your home screen"
+                    : "Install this page as an app for offline access",
+                "Install App"
             );
-        }, 1200);
-    }
+        }
+    }, 800);
 }
 
 // ==========================================

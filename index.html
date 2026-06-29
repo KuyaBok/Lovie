@@ -22,6 +22,35 @@
     <div class="confetti-container" id="confetti"></div>
     <div class="celebration-banner" id="celebrationBanner" aria-hidden="true"></div>
 
+    <!-- Login Modal -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <span class="login-icon">💕</span>
+                    <h2 class="login-title">Welcome to Our Love Story</h2>
+                    <p class="login-subtitle">Enter to continue</p>
+                </div>
+                <form class="login-form" id="loginForm">
+                    <div class="form-row">
+                        <label for="loginUsername">Who are you?</label>
+                        <select id="loginUsername" class="login-input" required>
+                            <option value="">Select...</option>
+                            <option value="joseph">Joseph</option>
+                            <option value="marga">Marga</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" class="login-input" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="login-btn">Continue</button>
+                    <p class="login-error hidden" id="loginError">Invalid credentials. Please try again.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="nav" id="mainNav">
         <div class="nav-brand">
@@ -154,6 +183,11 @@
         Your browser does not support the audio element.
     </audio>
 
+    <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="login.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

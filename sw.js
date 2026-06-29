@@ -1,12 +1,18 @@
-const CACHE_NAME = "love-story-cache-v2";
+const CACHE_NAME = "love-story-cache-v4";
 const ASSETS_TO_CACHE = [
   "/index.html",
   "/story.html",
   "/timeline.html",
   "/gallery.html",
   "/letters.html",
+  "/appreciation.html",
   "/styles.css",
   "/script.js",
+  "/appreciation-script.js",
+  "/auth.js",
+  "/firebase-config.js",
+  "/login.js",
+  "/letters-sync.js",
   "/manifest.json",
   "/icons/icon.svg"
 ];
