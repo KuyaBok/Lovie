@@ -106,39 +106,83 @@ function initInstallPrompt() {
     const installPromptText = document.getElementById("installPromptText");
     if (!installBtn || !installPromptText) return;
 
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+    const isAppleDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || isTouchDevice;
+
+    const showInstallUI = (message, buttonLabel = isAppleDevice ? "Add to Home Screen" : "Install App") => {
+        installBtn.textContent = buttonLabel;
+        installPromptText.textContent = message;
+        installBtn.classList.remove("hidden");
+        installPromptText.classList.remove("hidden");
+        installBtn.closest(".install-area")?.classList.add("visible");
+    };
+
+    const hideInstallUI = () => {
+        installBtn.classList.add("hidden");
+        installPromptText.classList.add("hidden");
+        installBtn.closest(".install-area")?.classList.remove("visible");
+    };
+
+    if (isStandalone) {
+        hideInstallUI();
+        return;
+    }
+
     window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredInstallPrompt = event;
-
-        setTimeout(() => {
-            installBtn.classList.remove("hidden");
-            installPromptText.classList.remove("hidden");
-            installBtn.closest('.install-area')?.classList.add('visible');
-        }, 1400);
+        showInstallUI(
+            "Install this lovely page to your home screen for quick access.",
+            "Install App"
+        );
     });
 
     installBtn.addEventListener("click", async () => {
-        if (!deferredInstallPrompt) return;
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            const choiceResult = await deferredInstallPrompt.userChoice;
 
-        deferredInstallPrompt.prompt();
-        const choiceResult = await deferredInstallPrompt.userChoice;
+            if (choiceResult.outcome === "accepted") {
+                console.log("User accepted the app install prompt");
+            } else {
+                console.log("User dismissed the app install prompt");
+            }
 
-        if (choiceResult.outcome === "accepted") {
-            console.log("User accepted the app install prompt");
-        } else {
-            console.log("User dismissed the app install prompt");
+            deferredInstallPrompt = null;
+            hideInstallUI();
+            return;
         }
 
-        deferredInstallPrompt = null;
-        installBtn.classList.add("hidden");
-        installPromptText.classList.add("hidden");
+        if (isAppleDevice) {
+            showInstallUI(
+                "On iPhone or iPad, tap Share and choose Add to Home Screen.",
+                "Add to Home Screen"
+            );
+        } else if (isMobile) {
+            showInstallUI(
+                "Open your browser menu and choose Install App or Add to Home Screen.",
+                "Install App"
+            );
+        }
     });
 
     window.addEventListener("appinstalled", () => {
         console.log("App installed successfully");
-        installBtn.classList.add("hidden");
-        installPromptText.classList.add("hidden");
+        hideInstallUI();
     });
+
+    if (isMobile && !deferredInstallPrompt) {
+        setTimeout(() => {
+            showInstallUI(
+                isAppleDevice
+                    ? "Tap here for easy steps to add this page to your home screen."
+                    : "Tap to install or add this page to your home screen.",
+                isAppleDevice ? "Add to Home Screen" : "Install App"
+            );
+        }, 1200);
+    }
 }
 
 // ==========================================

@@ -63,6 +63,8 @@ body {
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    flex-direction: column;
 }
 
 ::selection {
@@ -375,11 +377,6 @@ body {
     animation: fadeInUp 1s ease 1.1s both;
 }
 
-@keyframes scrollBounce {
-    0%, 100% { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(16px); opacity: 0; }
-}
-
 /* Hero Petals */
 .hero-petals {
     position: absolute;
@@ -460,6 +457,20 @@ body {
 .install-btn.hidden,
 .install-message.hidden {
     display: none;
+}
+
+@media (max-width: 768px) {
+    .install-area {
+        top: 16px;
+        right: 16px;
+        align-items: center;
+        text-align: center;
+        max-width: min(220px, calc(100% - 24px));
+    }
+
+    .install-btn {
+        width: 100%;
+    }
 }
 
 /* --- Animations --- */
@@ -1590,6 +1601,7 @@ body {
     padding: 60px 40px;
     background: rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(10px);
+    margin-top: auto;
 }
 
 .footer-hearts {
@@ -1838,6 +1850,179 @@ body {
 
     .gallery-item {
         aspect-ratio: 3/4;
+    }
+}
+
+/* --- Appreciation Section --- */
+.appreciation-hero {
+    background: linear-gradient(135deg, 
+        #d5c0b8 0%, 
+        #e8d5cf 20%, 
+        #dfd8e4 40%, 
+        #d4c8d8 60%,
+        #d4d0dc 80%,
+        #d8ccd8 100%
+    );
+}
+
+.appreciation-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent, rgba(236, 232, 240, 0.2), transparent);
+    z-index: 1;
+}
+
+.appreciation-section {
+    position: relative;
+    text-align: center;
+    overflow: hidden;
+}
+
+.appreciation-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.appreciation-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    perspective: 1000px;
+    background: var(--white);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition);
+}
+
+.appreciation-card:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.letter-number {
+    background: linear-gradient(135deg, #d8c0b8, #c8c8d4);
+    color: var(--white);
+    padding: 12px 36px;
+    font-family: var(--font-script);
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: left;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    letter-spacing: 1px;
+}
+
+.letter-received {
+    background: linear-gradient(135deg, #fdf8f6, #f5ebe4);
+    padding: 36px;
+    border-left: 4px solid var(--rose-medium);
+}
+
+.response-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(196, 160, 160, 0.3), transparent);
+    margin: 0;
+}
+
+.response-given {
+    background: linear-gradient(135deg, #f8f3f0, #f0ebe8);
+    padding: 36px;
+    border-left: 4px solid var(--lavender);
+}
+
+.response-title {
+    font-family: var(--font-script);
+    font-size: 1.2rem;
+    color: var(--lavender-dark);
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.letter-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.letter-header {
+    text-align: left;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed rgba(196, 160, 160, 0.3);
+    margin-bottom: 16px;
+}
+
+.letter-from {
+    font-family: var(--font-script);
+    font-size: 1.1rem;
+    color: var(--rose-dark);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.letter-date {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.letter-content {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.85;
+    font-style: italic;
+    text-align: left;
+}
+
+
+
+.appreciation-empty {
+    text-align: center;
+    padding: 60px 40px;
+    color: var(--text-light);
+}
+
+.appreciation-empty-icon {
+    font-size: 3.5rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.appreciation-empty-text {
+    font-family: var(--font-script);
+    font-size: 1.3rem;
+    color: var(--rose-dark);
+    margin-bottom: 8px;
+}
+
+/* --- Responsive Appreciation --- */
+@media (max-width: 900px) {
+    .appreciation-container {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    .appreciation-container {
+        gap: 24px;
+    }
+
+    .letter-received,
+    .response-given {
+        padding: 24px;
+    }
+
+    .letter-from {
+        font-size: 1rem;
+    }
+
+    .letter-icon {
+        font-size: 1.5rem;
     }
 }
 
