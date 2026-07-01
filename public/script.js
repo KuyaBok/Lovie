@@ -572,6 +572,10 @@ async function initGallery() {
         localStorage.setItem(storageKey, JSON.stringify(APP.uploadedItems));
     }
 
+    function getCurrentGalleryUser() {
+        return (typeof getCurrentUser === "function" && getCurrentUser()) || "";
+    }
+
     function getAllGalleryItems() {
         const staticPhotos = CONFIG.galleryItems.filter((item) => !!item.src);
         const uploadedPhotos = APP.uploadedItems.filter((item) => !!item.src);
@@ -581,6 +585,7 @@ async function initGallery() {
     function renderGallery(filter = "all") {
         grid.innerHTML = "";
         const allItems = getAllGalleryItems();
+        const currentUser = getCurrentGalleryUser();
         const filtered =
             filter === "all"
                 ? allItems
@@ -592,6 +597,7 @@ async function initGallery() {
             div.className = "gallery-item";
             div.dataset.index = realIndex;
             div.style.animationDelay = index * 0.1 + "s";
+            const canRemove = item.category === "custom" && item.author && item.author === currentUser;
 
             div.innerHTML = `
                 <img src="${item.src}" alt="${item.title}" loading="lazy">
@@ -599,6 +605,7 @@ async function initGallery() {
                     <div class="gallery-item-title">${item.title}</div>
                     <div class="gallery-item-date">${item.date}</div>
                 </div>
+                ${canRemove ? '<button class="gallery-remove-btn" type="button" data-index="' + realIndex + '" title="Remove photo">🗑</button>' : ""}
             `;
 
             grid.appendChild(div);
@@ -607,6 +614,15 @@ async function initGallery() {
         if (!filtered.length) {
             grid.innerHTML = '<p class="gallery-empty">No photos yet. Upload your first memory.</p>';
         }
+
+        grid.querySelectorAll(".gallery-remove-btn").forEach((btn) => {
+            btn.addEventListener("click", async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const index = Number(btn.dataset.index);
+                await removeGalleryItemByIndex(index);
+            });
+        });
 
         const newItems = grid.querySelectorAll(".gallery-item");
         newItems.forEach((el) => el.classList.add("reveal"));
@@ -692,18 +708,74 @@ async function initGallery() {
             const folderRef = window.firebaseStorage.ref(firebaseUploadFolder);
             const result = await folderRef.listAll();
             const items = await Promise.all(
-                result.items.map(async (fileRef) => ({
-                    src: await fileRef.getDownloadURL(),
-                    title: fileRef.name,
-                    date: "",
-                    category: "custom",
-                }))
+                result.items.map(async (fileRef) => {
+                    const [src, metadata] = await Promise.all([
+                        fileRef.getDownloadURL(),
+                        fileRef.getMetadata().catch(() => null),
+                    ]);
+                    const createdAt = metadata && metadata.timeCreated ? Date.parse(metadata.timeCreated) || 0 : 0;
+                    return {
+                        id: fileRef.fullPath,
+                        src,
+                        title: fileRef.name,
+                        date: metadata && metadata.timeCreated ? formatUploadDate(new Date(metadata.timeCreated)) : "",
+                        category: "custom",
+                        author: metadata && metadata.customMetadata ? metadata.customMetadata.author || "" : "",
+                        createdAt,
+                    };
+                })
             );
-            return items.reverse();
+            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            return items;
         } catch (error) {
             console.error("Firebase storage load error:", error);
             return [];
         }
+    }
+
+    async function removeGalleryItemByIndex(index) {
+        const allItems = getAllGalleryItems();
+        const item = allItems[index];
+        if (!item || !item.src) return;
+
+        if (item.category !== "custom") {
+            alert("Only uploaded photos can be removed.");
+            return;
+        }
+
+        const currentUser = getCurrentGalleryUser();
+        if (!item.author || !currentUser || item.author !== currentUser) {
+            alert("Only the author can remove this photo.");
+            return;
+        }
+
+        if (!window.confirm("Remove this photo from the gallery?")) return;
+
+        if (galleryRef && item.id) {
+            try {
+                await galleryRef.child(item.id).remove();
+            } catch (error) {
+                console.error("Gallery remove error:", error);
+                alert("Failed to remove photo. Please try again.");
+            }
+            return;
+        }
+
+        if (firebaseEnabled) {
+            try {
+                await window.firebaseStorage.refFromURL(item.src).delete();
+                APP.uploadedItems = await loadFirebaseUploads();
+                renderGallery(activeFilter);
+            } catch (error) {
+                console.error("Firebase remove error:", error);
+                alert("Failed to remove photo. Please try again.");
+            }
+            return;
+        }
+
+        APP.uploadedItems = APP.uploadedItems.filter((entry) => entry.src !== item.src);
+        saveUploadedItems();
+        renderGallery(activeFilter);
     }
 
     function subscribeRealtimeGallery() {
@@ -760,6 +832,7 @@ async function initGallery() {
             const baseName = file.name.replace(/\.[^/.]+$/, "");
             const customTitleInput = window.prompt("Photo title (this shows below the image):", baseName);
             const customTitle = (customTitleInput || "").trim() || baseName || "Memory";
+            const currentUser = getCurrentGalleryUser() || "unknown";
 
             let uploadFile = file;
             try {
@@ -773,6 +846,7 @@ async function initGallery() {
                 title: customTitle,
                 date: formatUploadDate(new Date()),
                 category: "custom",
+                author: currentUser,
                 uploading: true,
             };
 
@@ -783,7 +857,6 @@ async function initGallery() {
                 try {
                     const result = await uploadToCloudinary(uploadFile);
                     const entryRef = galleryRef.push();
-                    const currentUser = (typeof getCurrentUser === "function" && getCurrentUser()) || "unknown";
 
                     await entryRef.set({
                         id: entryRef.key,
@@ -806,7 +879,11 @@ async function initGallery() {
                 try {
                     const safeName = `${Date.now()}_${uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
                     const storageRef = window.firebaseStorage.ref(`${firebaseUploadFolder}/${safeName}`);
-                    await storageRef.put(uploadFile);
+                    await storageRef.put(uploadFile, {
+                        customMetadata: {
+                            author: currentUser,
+                        },
+                    });
                     tempItem.src = await storageRef.getDownloadURL();
                     delete tempItem.uploading;
                     APP.uploadedItems = await loadFirebaseUploads();

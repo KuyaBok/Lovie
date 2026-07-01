@@ -815,6 +815,31 @@ body {
     transition: var(--transition);
     border: 3px solid rgba(255, 255, 255, 0.6);
 }
+.gallery-item {
+    position: relative;
+}
+.gallery-remove-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    border: none;
+    border-radius: 999px;
+    background: rgba(25, 18, 30, 0.72);
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.18s ease, background 0.18s ease;
+}
+.gallery-remove-btn:hover {
+    background: rgba(200, 65, 100, 0.9);
+    transform: scale(1.05);
+}
 
 .gallery-item:hover {
     transform: translateY(-8px) rotate(-1deg);
