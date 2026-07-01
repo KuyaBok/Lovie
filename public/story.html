@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Story | Our Love Story 💕</title>
+    <meta name="description" content="Our love story and anniversary countdown.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Sacramento&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d67f87">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+    <div class="floating-hearts" id="floatingHearts"></div>
+    <div class="sparkles" id="sparkles"></div>
+    <div class="confetti-container" id="confetti"></div>
+    <div class="celebration-banner" id="celebrationBanner" aria-hidden="true"></div>
+
+    <nav class="nav" id="mainNav">
+        <div class="nav-brand">
+            <span class="nav-heart">💕</span>
+            <span class="nav-text">Our Story</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="nav-link">Home</a></li>
+            <li><a href="story.html" class="nav-link active">Our Story</a></li>
+            <li><a href="timeline.html" class="nav-link">Timeline</a></li>
+            <li><a href="gallery.html" class="nav-link">Gallery</a></li>
+            <li><a href="letters.html" class="nav-link">Letters</a></li>
+            <li><a href="appreciation.html" class="nav-link">My Appreciation</a></li>
+        </ul>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <ul class="mobile-menu-links">
+            <li><a href="index.html" class="mobile-link">Home</a></li>
+            <li><a href="story.html" class="mobile-link">Our Story</a></li>
+            <li><a href="timeline.html" class="mobile-link">Timeline</a></li>
+            <li><a href="gallery.html" class="mobile-link">Gallery</a></li>
+            <li><a href="letters.html" class="mobile-link">Letters</a></li>
+            <li><a href="appreciation.html" class="mobile-link">My Appreciation</a></li>
+        </ul>
+    </div>
+
+    <section class="section story-section" id="our-story">
+        <div class="section-header">
+            <span class="section-icon">🌸</span>
+            <h2 class="section-title">How We Met</h2>
+            <p class="section-subtitle">The beginning of our fairy tale</p>
+        </div>
+        <div class="story-container">
+            <div class="story-card">
+                <div class="story-card-glow"></div>
+                <div class="story-emoji">💫</div>
+                <h3 class="story-heading">Once Upon a Time...</h3>
+                <p class="story-text">
+                    It started like any other day, but the universe had something magical planned for us. 
+                    Our paths crossed and everything changed. From that very first moment, I knew there 
+                    was something special about you — something that made the world feel brighter, warmer, 
+                    and infinitely more beautiful.
+                </p>
+                <p class="story-text">
+                    Edit this section to tell your own story! Describe how you met, what you felt, 
+                    and the magic of that first encounter. Make it yours. 💕
+                </p>
+            </div>
+            <div class="story-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="daysTogether">0</div>
+                    <div class="stat-label">Days Together</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="hoursTogether">0</div>
+                    <div class="stat-label">Hours of Love</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">Reasons I Love You</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-hearts">💕 💗 💕</div>
+        <p class="footer-text">Made with love, for the love of my life</p>
+        <p class="footer-copyright">Our Love Story &copy; <span id="footerYear"></span></p>
+    </footer>
+
+    <div class="music-player" id="musicPlayer">
+        <button class="music-btn" id="musicBtn" aria-label="Toggle music">
+            <span class="music-icon" id="musicIcon">🎵</span>
+            <div class="music-waves" id="musicWaves">
+                <span></span><span></span><span></span><span></span>
+            </div>
+        </button>
+    </div>
+
+    <audio id="bgMusic" loop preload="auto"></audio>
+    <script src="auth.js"></script>
+    <script>requireLogin();</script>
+    <script src="script.js"></script>
+</body>
+</html>

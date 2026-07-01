@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appreciation | Our Love Story 💕</title>
+    <meta name="description" content="Your letters and my heartfelt responses and appreciation.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Sacramento&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d67f87">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+    <!-- Floating elements -->
+    <div class="floating-hearts" id="floatingHearts"></div>
+    <div class="sparkles" id="sparkles"></div>
+    <div class="confetti-container" id="confetti"></div>
+    <div class="celebration-banner" id="celebrationBanner" aria-hidden="true"></div>
+
+    <!-- Navigation -->
+    <nav class="nav" id="mainNav">
+        <div class="nav-brand">
+            <span class="nav-heart">💕</span>
+            <span class="nav-text">Our Story</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="nav-link">Home</a></li>
+            <li><a href="story.html" class="nav-link">Our Story</a></li>
+            <li><a href="timeline.html" class="nav-link">Timeline</a></li>
+            <li><a href="gallery.html" class="nav-link">Gallery</a></li>
+            <li><a href="letters.html" class="nav-link">Letters</a></li>
+            <li><a href="appreciation.html" class="nav-link active">My Appreciation</a></li>
+        </ul>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <ul class="mobile-menu-links">
+            <li><a href="index.html" class="mobile-link">Home</a></li>
+            <li><a href="story.html" class="mobile-link">Our Story</a></li>
+            <li><a href="timeline.html" class="mobile-link">Timeline</a></li>
+            <li><a href="gallery.html" class="mobile-link">Gallery</a></li>
+            <li><a href="letters.html" class="mobile-link">Letters</a></li>
+            <li><a href="appreciation.html" class="mobile-link">My Appreciation</a></li>
+        </ul>
+    </div>
+
+    <!-- Page Hero -->
+    <section class="hero appreciation-hero" id="home">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-badge">my response</div>
+            <h1 class="hero-title">
+                <span class="hero-name">My Appreciation</span>
+            </h1>
+            <p class="hero-subtitle">Your letters mean the world to me. Here are my heartfelt responses. 💌</p>
+        </div>
+        <div class="hero-petals" id="heroPetals"></div>
+    </section>
+
+    <!-- Appreciation Letters Section -->
+    <section class="section appreciation-section" id="appreciation">
+        <div class="appreciation-bg"></div>
+        <div class="section-header">
+            <span class="section-icon">💝</span>
+            <h2 class="section-title">Letters & Responses</h2>
+            <p class="section-subtitle">Every word you wrote touched my heart</p>
+        </div>
+        <div class="appreciation-container" id="appreciationContainer">
+            <!-- Letters will be loaded here -->
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-hearts">💕 💗 💕</div>
+        <p class="footer-text">Made with love, for the love of my life</p>
+        <p class="footer-copyright">Our Love Story &copy; <span id="footerYear"></span></p>
+    </footer>
+
+    <!-- Music Player -->
+    <div class="music-player" id="musicPlayer">
+        <button class="music-btn" id="musicBtn" aria-label="Toggle music">
+            <span class="music-icon" id="musicIcon">🎵</span>
+            <div class="music-waves" id="musicWaves">
+                <span></span><span></span><span></span><span></span>
+            </div>
+        </button>
+    </div>
+
+    <!-- Audio element - local music file -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="music/YTDown_YouTube_Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Ly_Media_zgaCZOQCpp8_009_128k.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script src="auth.js"></script>
+    <script>requireLogin();</script>
+    <script src="script.js"></script>
+    <script src="appreciation-script.js"></script>
+</body>
+</html>
