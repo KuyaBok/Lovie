@@ -2185,6 +2185,15 @@ body {
     font-weight: 600;
 }
 
+.entry-owner {
+    margin-bottom: 10px;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
 .entry-subheading,
 .response-label {
     display: block;

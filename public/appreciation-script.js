@@ -173,6 +173,7 @@ function initAppreciation() {
                             </div>
                         `
                         : "";
+                    const ownerLabel = `By ${escapeHtml(getOwnerDisplayName(item.createdBy))}`;
 
                     return `
                         <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
@@ -180,6 +181,7 @@ function initAppreciation() {
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
                                 <div class="appreciation-entry-type">${meta.title}</div>
+                                <div class="entry-owner">${ownerLabel}</div>
                                 <div class="letter-header">
                                     <div class="letter-from">${escapeHtml(item.from)}</div>
                                     <div class="letter-date">${escapeHtml(item.date)}</div>
@@ -198,6 +200,7 @@ function initAppreciation() {
                         </div>
                     `
                     : "";
+                const ownerLabel = `By ${escapeHtml(getOwnerDisplayName(item.createdBy))}`;
 
                 return `
                     <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
@@ -205,6 +208,7 @@ function initAppreciation() {
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
                             <div class="appreciation-entry-type">${meta.title}</div>
+                            <div class="entry-owner">${ownerLabel}</div>
                             <div class="letter-header">
                                 <div class="letter-from">${escapeHtml(item.from)}</div>
                                 <div class="letter-date">${escapeHtml(item.date)}</div>
@@ -406,6 +410,12 @@ function escapeHtml(value) {
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;")
         .replace(/\n/g, "<br>");
+}
+
+function getOwnerDisplayName(owner) {
+    if (!owner || typeof owner !== "string") return "Unknown";
+    if (typeof formatUsername === "function") return formatUsername(owner);
+    return owner.charAt(0).toUpperCase() + owner.slice(1).toLowerCase();
 }
 
 // Import shared functions from main script
