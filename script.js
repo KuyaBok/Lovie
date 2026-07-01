@@ -573,7 +573,9 @@ async function initGallery() {
     }
 
     function getAllGalleryItems() {
-        return [...CONFIG.galleryItems, ...APP.uploadedItems];
+        const staticPhotos = CONFIG.galleryItems.filter((item) => !!item.src);
+        const uploadedPhotos = APP.uploadedItems.filter((item) => !!item.src);
+        return [...staticPhotos, ...uploadedPhotos];
     }
 
     function renderGallery(filter = "all") {
@@ -591,28 +593,20 @@ async function initGallery() {
             div.dataset.index = realIndex;
             div.style.animationDelay = index * 0.1 + "s";
 
-            if (item.src) {
-                div.innerHTML = `
-                    <img src="${item.src}" alt="${item.title}" loading="lazy">
-                    <div class="gallery-item-overlay">
-                        <div class="gallery-item-title">${item.title}</div>
-                        <div class="gallery-item-date">${item.date}</div>
-                    </div>
-                `;
-            } else {
-                div.innerHTML = `
-                    <div class="gallery-placeholder gallery-placeholder-${item.placeholder}">
-                        ${item.emoji}
-                    </div>
-                    <div class="gallery-item-overlay">
-                        <div class="gallery-item-title">${item.title}</div>
-                        <div class="gallery-item-date">${item.date}</div>
-                    </div>
-                `;
-            }
+            div.innerHTML = `
+                <img src="${item.src}" alt="${item.title}" loading="lazy">
+                <div class="gallery-item-overlay">
+                    <div class="gallery-item-title">${item.title}</div>
+                    <div class="gallery-item-date">${item.date}</div>
+                </div>
+            `;
 
             grid.appendChild(div);
         });
+
+        if (!filtered.length) {
+            grid.innerHTML = '<p class="gallery-empty">No photos yet. Upload your first memory.</p>';
+        }
 
         const newItems = grid.querySelectorAll(".gallery-item");
         newItems.forEach((el) => el.classList.add("reveal"));
@@ -763,6 +757,10 @@ async function initGallery() {
         if (!files || files.length === 0) return;
 
         for (const file of Array.from(files)) {
+            const baseName = file.name.replace(/\.[^/.]+$/, "");
+            const customTitleInput = window.prompt("Photo title (this shows below the image):", baseName);
+            const customTitle = (customTitleInput || "").trim() || baseName || "Memory";
+
             let uploadFile = file;
             try {
                 uploadFile = await optimizeImageForUpload(file);
@@ -772,7 +770,7 @@ async function initGallery() {
 
             const tempItem = {
                 src: URL.createObjectURL(uploadFile),
-                title: uploadFile.name,
+                title: customTitle,
                 date: formatUploadDate(new Date()),
                 category: "custom",
                 uploading: true,
@@ -790,7 +788,7 @@ async function initGallery() {
                     await entryRef.set({
                         id: entryRef.key,
                         src: result.secure_url,
-                        title: uploadFile.name,
+                        title: customTitle,
                         date: formatUploadDate(new Date()),
                         category: "custom",
                         author: currentUser,
@@ -1124,7 +1122,11 @@ function initLightbox() {
     if (!lightbox || !galleryGrid) return;
 
     let currentIndex = 0;
-    const allGalleryItems = () => [...CONFIG.galleryItems, ...APP.uploadedItems];
+    const allGalleryItems = () => {
+        const staticPhotos = CONFIG.galleryItems.filter((item) => !!item.src);
+        const uploadedPhotos = APP.uploadedItems.filter((item) => !!item.src);
+        return [...staticPhotos, ...uploadedPhotos];
+    };
 
     // Open lightbox on gallery item click
     document.getElementById("galleryGrid").addEventListener("click", (e) => {
