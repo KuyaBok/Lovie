@@ -359,7 +359,13 @@ function initAppreciation() {
         const card = event.target.closest(".appreciation-card");
         if (!card) return;
 
-        card.classList.toggle("is-collapsed");
+        const wasCollapsed = card.classList.contains("is-collapsed");
+        const allCards = container.querySelectorAll(".appreciation-card");
+        allCards.forEach((entryCard) => entryCard.classList.add("is-collapsed"));
+
+        if (wasCollapsed) {
+            card.classList.remove("is-collapsed");
+        }
     });
 
     saveBtn.addEventListener("click", () => {
