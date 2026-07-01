@@ -2,7 +2,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyB87vRHppmk0l1iKh1fv7Ain3jL0chXv8U",
   authDomain: "lovie-22c76.firebaseapp.com",
-  databaseURL: "https://lovie-22c76-default-rtdb.firebaseio.com",
+  databaseURL: "https://lovie-22c76-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "lovie-22c76",
   storageBucket: "lovie-22c76.firebasestorage.app",
   messagingSenderId: "333538654885",
