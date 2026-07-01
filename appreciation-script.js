@@ -180,12 +180,13 @@ function initAppreciation() {
                     );
 
                     return `
-                        <div class="appreciation-card" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        <div class="appreciation-card is-collapsed" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                             ${actionButtons}
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
                                 <div class="appreciation-entry-type">${meta.title}</div>
                                 <div class="entry-owner">${ownerLabel}</div>
+                                <div class="card-toggle-hint">Tap card to view content</div>
                                 <div class="letter-header">
                                     <div class="letter-from">${escapeHtml(item.from)}</div>
                                     <div class="letter-date">${escapeHtml(item.date)}</div>
@@ -215,12 +216,13 @@ function initAppreciation() {
                 );
 
                 return `
-                    <div class="appreciation-card" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                    <div class="appreciation-card is-collapsed" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                         ${actionButtons}
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
                             <div class="appreciation-entry-type">${meta.title}</div>
                             <div class="entry-owner">${ownerLabel}</div>
+                            <div class="card-toggle-hint">Tap card to view content</div>
                             <div class="letter-header">
                                 <div class="letter-from">${escapeHtml(item.from)}</div>
                                 <div class="letter-date">${escapeHtml(item.date)}</div>
@@ -298,6 +300,11 @@ function initAppreciation() {
             }
             return;
         }
+
+        const card = event.target.closest(".appreciation-card");
+        if (!card) return;
+
+        card.classList.toggle("is-collapsed");
     });
 
     saveBtn.addEventListener("click", () => {

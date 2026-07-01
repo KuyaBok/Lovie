@@ -2109,6 +2109,24 @@ body {
     overflow: hidden;
     box-shadow: var(--shadow-soft);
     transition: var(--transition);
+    cursor: pointer;
+}
+
+.card-toggle-hint {
+    margin-bottom: 10px;
+    font-size: 0.78rem;
+    color: var(--text-light);
+    opacity: 0.85;
+}
+
+.appreciation-card.is-collapsed .entry-subheading,
+.appreciation-card.is-collapsed .letter-content,
+.appreciation-card.is-collapsed .response-given {
+    display: none;
+}
+
+.appreciation-card:not(.is-collapsed) .card-toggle-hint {
+    display: none;
 }
 
 .entry-actions {
@@ -2144,14 +2162,6 @@ body {
 .appreciation-card:hover {
     box-shadow: var(--shadow-glow);
     transform: translateY(-2px);
-}
-
-.appreciation-card-manageable {
-    cursor: pointer;
-}
-
-.appreciation-card-manageable:hover {
-    box-shadow: 0 0 0 2px rgba(153, 110, 110, 0.15), var(--shadow-glow);
 }
 
 .letter-number {
