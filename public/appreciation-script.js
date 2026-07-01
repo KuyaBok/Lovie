@@ -84,7 +84,22 @@ function initAppreciation() {
     }
 
     const entries = loadAppreciationEntries();
+    const currentUser =
+        typeof getCurrentUser === "function"
+            ? (getCurrentUser() || "").toLowerCase()
+            : "";
     let activeType = "letters";
+    let editingIndex = -1;
+
+    function getEntryOwner(item) {
+        return typeof item.createdBy === "string"
+            ? item.createdBy.toLowerCase()
+            : "";
+    }
+
+    function canManageEntry(item) {
+        return Boolean(currentUser) && getEntryOwner(item) === currentUser;
+    }
 
     function setActiveType(type) {
         activeType = TYPE_META[type] ? type : "letters";
@@ -116,6 +131,8 @@ function initAppreciation() {
         sourceText.value = "";
         responseText.value = "";
         freeformText.value = "";
+        editingIndex = -1;
+        saveBtn.textContent = "Save";
         setActiveType("letters");
     }
 
@@ -148,8 +165,18 @@ function initAppreciation() {
                 const meta = TYPE_META[type];
 
                 if (type === "freeform") {
+                    const actionButtons = canManageEntry(item)
+                        ? `
+                            <div class="entry-actions">
+                                <button type="button" class="entry-action-btn" data-action="edit" data-index="${index}">Edit</button>
+                                <button type="button" class="entry-action-btn danger" data-action="delete" data-index="${index}">Delete</button>
+                            </div>
+                        `
+                        : "";
+
                     return `
                         <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                            ${actionButtons}
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
                                 <div class="appreciation-entry-type">${meta.title}</div>
@@ -163,8 +190,18 @@ function initAppreciation() {
                     `;
                 }
 
+                const actionButtons = canManageEntry(item)
+                    ? `
+                        <div class="entry-actions">
+                            <button type="button" class="entry-action-btn" data-action="edit" data-index="${index}">Edit</button>
+                            <button type="button" class="entry-action-btn danger" data-action="delete" data-index="${index}">Delete</button>
+                        </div>
+                    `
+                    : "";
+
                 return `
                     <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        ${actionButtons}
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
                             <div class="appreciation-entry-type">${meta.title}</div>
@@ -186,12 +223,65 @@ function initAppreciation() {
             .join("");
     }
 
+    function openEditor(index) {
+        const item = entries[index];
+        if (!item || !canManageEntry(item)) return;
+
+        const type = TYPE_META[item.type] ? item.type : "letters";
+        editingIndex = index;
+        setActiveType(type);
+
+        fromInput.value = item.from || "";
+        dateInput.value = item.date || "";
+
+        if (type === "freeform") {
+            freeformText.value = item.freeformText || "";
+            sourceText.value = "";
+            responseText.value = "";
+        } else {
+            sourceText.value = item.sourceText || "";
+            responseText.value = item.responseText || "";
+            freeformText.value = "";
+        }
+
+        saveBtn.textContent = "Save Changes";
+        showForm();
+        form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function deleteEntry(index) {
+        const item = entries[index];
+        if (!item || !canManageEntry(item)) return;
+        if (!window.confirm("Delete this appreciation entry?")) return;
+
+        entries.splice(index, 1);
+        localStorage.setItem(APPRECIATION_STORAGE_KEY, JSON.stringify(entries));
+        renderEntries();
+    }
+
     typeOptions.forEach((button) => {
         button.addEventListener("click", () => setActiveType(button.dataset.type));
     });
 
     addBtn.addEventListener("click", showForm);
     cancelBtn.addEventListener("click", hideForm);
+
+    container.addEventListener("click", (event) => {
+        const actionButton = event.target.closest(".entry-action-btn");
+        if (!actionButton) return;
+
+        const index = Number(actionButton.dataset.index);
+        if (!Number.isInteger(index) || index < 0 || index >= entries.length) {
+            return;
+        }
+
+        const action = actionButton.dataset.action;
+        if (action === "edit") {
+            openEditor(index);
+        } else if (action === "delete") {
+            deleteEntry(index);
+        }
+    });
 
     saveBtn.addEventListener("click", () => {
         const from = fromInput.value.trim() || "From: You";
@@ -201,24 +291,44 @@ function initAppreciation() {
             const freeformValue = freeformText.value.trim();
             if (!freeformValue) return;
 
-            entries.unshift({
+            const entry = {
                 type: "freeform",
                 from,
                 date,
                 freeformText: freeformValue,
-            });
+                createdBy: currentUser,
+            };
+
+            if (editingIndex >= 0) {
+                const owner = getEntryOwner(entries[editingIndex]);
+                if (owner !== currentUser) return;
+                entry.createdBy = entries[editingIndex].createdBy;
+                entries[editingIndex] = entry;
+            } else {
+                entries.unshift(entry);
+            }
         } else {
             const sourceValue = sourceText.value.trim();
             const responseValue = responseText.value.trim();
             if (!sourceValue || !responseValue) return;
 
-            entries.unshift({
+            const entry = {
                 type: activeType,
                 from,
                 date,
                 sourceText: sourceValue,
                 responseText: responseValue,
-            });
+                createdBy: currentUser,
+            };
+
+            if (editingIndex >= 0) {
+                const owner = getEntryOwner(entries[editingIndex]);
+                if (owner !== currentUser) return;
+                entry.createdBy = entries[editingIndex].createdBy;
+                entries[editingIndex] = entry;
+            } else {
+                entries.unshift(entry);
+            }
         }
 
         localStorage.setItem(APPRECIATION_STORAGE_KEY, JSON.stringify(entries));
@@ -258,6 +368,7 @@ function normalizeAppreciationEntry(item) {
                 from: item.from || "From: You",
                 date: item.date || "A moment in time",
                 freeformText: item.freeformText,
+                createdBy: item.createdBy || null,
             };
         }
 
@@ -268,6 +379,7 @@ function normalizeAppreciationEntry(item) {
             date: item.date || "A moment in time",
             sourceText: item.sourceText,
             responseText: item.responseText,
+            createdBy: item.createdBy || null,
         };
     }
 
@@ -279,6 +391,7 @@ function normalizeAppreciationEntry(item) {
             date: item.letterDate || "A moment in time",
             sourceText: item.letterText,
             responseText: item.responseText,
+            createdBy: item.createdBy || null,
         };
     }
 

@@ -2107,6 +2107,36 @@ body {
     transition: var(--transition);
 }
 
+.entry-actions {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.entry-action-btn {
+    border: 1px solid rgba(196, 160, 160, 0.45);
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--rose-dark);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.entry-action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.entry-action-btn.danger {
+    color: #9d2a42;
+    border-color: rgba(157, 42, 66, 0.35);
+}
+
 .appreciation-card:hover {
     box-shadow: var(--shadow-glow);
     transform: translateY(-2px);
