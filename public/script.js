@@ -1466,6 +1466,7 @@ function initMusicPlayer() {
     let syncingFromRemote = false;
     let externalPlaying = false;
     let shouldResume = false;
+    let pageIsLeaving = false;
 
     // Ensure every page has a playable source even if the HTML source tag is missing.
     if (!audio.querySelector("source") && !audio.getAttribute("src")) {
@@ -1666,7 +1667,7 @@ function initMusicPlayer() {
 
     audio.addEventListener("pause", () => {
         applyUi(!audio.paused);
-        if (syncingFromRemote) return;
+        if (syncingFromRemote || pageIsLeaving) return;
 
         shouldResume = false;
         releaseOwnershipIfHeld();
@@ -1754,11 +1755,13 @@ function initMusicPlayer() {
     });
 
     window.addEventListener("pagehide", () => {
-        writeState();
+        pageIsLeaving = true;
+        writeState({ shouldPlay: shouldResume || !audio.paused });
         releaseOwnershipIfHeld();
     });
     window.addEventListener("beforeunload", () => {
-        writeState();
+        pageIsLeaving = true;
+        writeState({ shouldPlay: shouldResume || !audio.paused });
         releaseOwnershipIfHeld();
     });
 
