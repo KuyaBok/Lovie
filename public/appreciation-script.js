@@ -3,6 +3,9 @@
    ============================================ */
 
 const APPRECIATION_STORAGE_KEY = "appreciationEntries";
+const APPRECIATION_DB_PATH = "appreciations";
+
+let appreciationRef = null;
 
 const TYPE_META = {
     letters: {
@@ -83,13 +86,56 @@ function initAppreciation() {
         return;
     }
 
-    const entries = loadAppreciationEntries();
-    const currentUser =
-        typeof getCurrentUser === "function"
-            ? (getCurrentUser() || "").toLowerCase()
-            : "";
+    let entries = [];
+    const currentUserRaw =
+        typeof getCurrentUser === "function" ? getCurrentUser() || "" : "";
+    const currentUser = currentUserRaw.toLowerCase();
     let activeType = "letters";
     let editingIndex = -1;
+
+    function sortEntries(list) {
+        return list.sort((a, b) => {
+            const aTime = a.createdAt || Date.parse(a.timestamp || 0) || 0;
+            const bTime = b.createdAt || Date.parse(b.timestamp || 0) || 0;
+            return bTime - aTime;
+        });
+    }
+
+    function setEntries(nextEntries) {
+        entries = sortEntries(nextEntries);
+        localStorage.setItem(APPRECIATION_STORAGE_KEY, JSON.stringify(entries));
+        renderEntries();
+    }
+
+    function initAppreciationRealtime() {
+        if (!window.firebase || typeof firebase.database !== "function") {
+            return false;
+        }
+
+        const db = window.database || firebase.database();
+        if (!db) {
+            return false;
+        }
+
+        appreciationRef = db.ref(APPRECIATION_DB_PATH);
+        appreciationRef.on("value", (snapshot) => {
+            const syncedEntries = [];
+
+            snapshot.forEach((child) => {
+                const normalized = normalizeAppreciationEntry({
+                    ...child.val(),
+                    id: child.key,
+                });
+                if (normalized) {
+                    syncedEntries.push(normalized);
+                }
+            });
+
+            setEntries(syncedEntries);
+        });
+
+        return true;
+    }
 
     function getEntryOwner(item) {
         return typeof item.createdBy === "string"
@@ -272,9 +318,18 @@ function initAppreciation() {
         if (!item || !canManageEntry(item)) return;
         if (!window.confirm("Delete this appreciation entry?")) return;
 
+        if (appreciationRef && item.id) {
+            appreciationRef.child(item.id).remove((error) => {
+                if (error) {
+                    console.error("Failed to delete appreciation entry:", error);
+                    alert("Failed to delete entry. Please try again.");
+                }
+            });
+            return;
+        }
+
         entries.splice(index, 1);
-        localStorage.setItem(APPRECIATION_STORAGE_KEY, JSON.stringify(entries));
-        renderEntries();
+        setEntries([...entries]);
     }
 
     typeOptions.forEach((button) => {
@@ -310,58 +365,74 @@ function initAppreciation() {
     saveBtn.addEventListener("click", () => {
         const from = fromInput.value.trim() || "From: You";
         const date = dateInput.value.trim() || "A moment in time";
+        const editingItem = editingIndex >= 0 ? entries[editingIndex] : null;
+        if (editingItem && getEntryOwner(editingItem) !== currentUser) {
+            return;
+        }
+
+        const entryId = editingItem?.id || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+        const createdByValue = editingItem?.createdBy || currentUserRaw || currentUser || null;
+        const createdAtValue = editingItem?.createdAt || Date.now();
+        const timestampValue = editingItem?.timestamp || new Date(createdAtValue).toISOString();
+
+        let entry;
 
         if (activeType === "freeform") {
             const freeformValue = freeformText.value.trim();
             if (!freeformValue) return;
 
-            const entry = {
+            entry = {
+                id: entryId,
                 type: "freeform",
                 from,
                 date,
                 freeformText: freeformValue,
-                createdBy: currentUser,
+                createdBy: createdByValue,
+                createdAt: createdAtValue,
+                timestamp: timestampValue,
+                updatedAt: Date.now(),
             };
-
-            if (editingIndex >= 0) {
-                const owner = getEntryOwner(entries[editingIndex]);
-                if (owner !== currentUser) return;
-                entry.createdBy = entries[editingIndex].createdBy;
-                entries[editingIndex] = entry;
-            } else {
-                entries.unshift(entry);
-            }
         } else {
             const sourceValue = sourceText.value.trim();
             const responseValue = responseText.value.trim();
             if (!sourceValue || !responseValue) return;
 
-            const entry = {
+            entry = {
+                id: entryId,
                 type: activeType,
                 from,
                 date,
                 sourceText: sourceValue,
                 responseText: responseValue,
-                createdBy: currentUser,
+                createdBy: createdByValue,
+                createdAt: createdAtValue,
+                timestamp: timestampValue,
+                updatedAt: Date.now(),
             };
-
-            if (editingIndex >= 0) {
-                const owner = getEntryOwner(entries[editingIndex]);
-                if (owner !== currentUser) return;
-                entry.createdBy = entries[editingIndex].createdBy;
-                entries[editingIndex] = entry;
-            } else {
-                entries.unshift(entry);
-            }
         }
 
-        localStorage.setItem(APPRECIATION_STORAGE_KEY, JSON.stringify(entries));
-        renderEntries();
+        if (appreciationRef && entry.id) {
+            appreciationRef.child(entry.id).set(entry, (error) => {
+                if (error) {
+                    console.error("Failed to save appreciation entry:", error);
+                    alert("Failed to save entry. Please try again.");
+                }
+            });
+        } else if (editingIndex >= 0) {
+            entries[editingIndex] = entry;
+            setEntries([...entries]);
+        } else {
+            setEntries([entry, ...entries]);
+        }
+
         hideForm();
     });
 
     setActiveType("letters");
-    renderEntries();
+    const realtimeEnabled = initAppreciationRealtime();
+    if (!realtimeEnabled) {
+        setEntries(loadAppreciationEntries());
+    }
 }
 
 function loadAppreciationEntries() {
@@ -390,11 +461,15 @@ function normalizeAppreciationEntry(item) {
                 item.freeformText || item.text || item.freeform || "";
             if (!freeformText || !String(freeformText).trim()) return null;
             return {
+                id: item.id || null,
                 type: "freeform",
                 from: item.from || "From: You",
                 date: item.date || "A moment in time",
                 freeformText,
                 createdBy: item.createdBy || null,
+                timestamp: item.timestamp || null,
+                createdAt: item.createdAt || null,
+                updatedAt: item.updatedAt || null,
             };
         }
 
@@ -404,24 +479,32 @@ function normalizeAppreciationEntry(item) {
             item.responseText || item.appreciationText || item.response || "";
         if (!String(sourceText).trim() || !String(responseText).trim()) return null;
         return {
+            id: item.id || null,
             type: item.type,
             from: item.from || "From: You",
             date: item.date || "A moment in time",
             sourceText,
             responseText,
             createdBy: item.createdBy || null,
+            timestamp: item.timestamp || null,
+            createdAt: item.createdAt || null,
+            updatedAt: item.updatedAt || null,
         };
     }
 
     // Backward compatibility for existing letter/response entries.
     if (item.letterText && item.responseText) {
         return {
+            id: item.id || null,
             type: "letters",
             from: item.letterFrom || "From: You",
             date: item.letterDate || "A moment in time",
             sourceText: item.letterText,
             responseText: item.responseText,
             createdBy: item.createdBy || null,
+            timestamp: item.timestamp || null,
+            createdAt: item.createdAt || null,
+            updatedAt: item.updatedAt || null,
         };
     }
 
