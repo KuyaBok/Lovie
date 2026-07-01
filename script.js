@@ -1114,25 +1114,128 @@ function initMusicPlayer() {
     const audio = document.getElementById("bgMusic");
     if (!musicBtn || !audio) return;
 
-    let isPlaying = false;
+    const MUSIC_STATE_KEY = "loveMusicState";
+    const DEFAULT_MUSIC_SRC = "music/YTDown_YouTube_Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Ly_Media_zgaCZOQCpp8_009_128k.mp3";
+    let saveThrottle = 0;
 
-    musicBtn.addEventListener("click", () => {
-        if (isPlaying) {
-            audio.pause();
+    // Ensure every page has a playable source even if the HTML source tag is missing.
+    if (!audio.querySelector("source") && !audio.getAttribute("src")) {
+        audio.src = DEFAULT_MUSIC_SRC;
+    }
+
+    const readState = () => {
+        try {
+            const raw = localStorage.getItem(MUSIC_STATE_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch {
+            return {};
+        }
+    };
+
+    const writeState = () => {
+        try {
+            localStorage.setItem(
+                MUSIC_STATE_KEY,
+                JSON.stringify({
+                    shouldPlay: !audio.paused,
+                    currentTime: Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+                })
+            );
+        } catch {
+            // Ignore storage failures (private mode/quota) and keep player usable.
+        }
+    };
+
+    const applyUi = (playing) => {
+        if (playing) {
+            musicWaves.classList.add("playing");
+            musicIcon.style.opacity = "0";
+        } else {
             musicWaves.classList.remove("playing");
             musicIcon.style.opacity = "1";
             musicIcon.textContent = "🎵";
-        } else {
-            audio.play().catch(() => {
-                // No audio source yet
-                musicIcon.textContent = "🎶";
-                setTimeout(() => (musicIcon.textContent = "🎵"), 1000);
-            });
-            musicWaves.classList.add("playing");
-            musicIcon.style.opacity = "0";
         }
-        isPlaying = !isPlaying;
+    };
+
+    const flashBlocked = () => {
+        musicIcon.textContent = "🎶";
+        setTimeout(() => {
+            if (audio.paused) musicIcon.textContent = "🎵";
+        }, 1000);
+    };
+
+    const tryPlay = async () => {
+        try {
+            await audio.play();
+            return true;
+        } catch {
+            applyUi(false);
+            flashBlocked();
+            return false;
+        }
+    };
+
+    const savedState = readState();
+    let shouldResume = !!savedState.shouldPlay;
+    const resumeAt = Number(savedState.currentTime) || 0;
+
+    audio.addEventListener("loadedmetadata", () => {
+        if (resumeAt > 0 && Number.isFinite(audio.duration) && audio.duration > 0) {
+            audio.currentTime = Math.min(resumeAt, Math.max(0, audio.duration - 0.25));
+        }
     });
+
+    audio.addEventListener("play", () => {
+        applyUi(true);
+        writeState();
+    });
+
+    audio.addEventListener("pause", () => {
+        applyUi(false);
+        writeState();
+    });
+
+    audio.addEventListener("timeupdate", () => {
+        const now = Date.now();
+        if (now - saveThrottle > 900) {
+            saveThrottle = now;
+            writeState();
+        }
+    });
+
+    document.addEventListener("visibilitychange", async () => {
+        if (!document.hidden && shouldResume && audio.paused) {
+            const played = await tryPlay();
+            shouldResume = played;
+        }
+    });
+
+    window.addEventListener("pagehide", writeState);
+    window.addEventListener("beforeunload", writeState);
+
+    musicBtn.addEventListener("click", async () => {
+        if (audio.paused) {
+            const played = await tryPlay();
+            shouldResume = played;
+            writeState();
+            return;
+        }
+
+        shouldResume = false;
+        audio.pause();
+        writeState();
+    });
+
+    applyUi(!audio.paused);
+
+    // After navigation to another page, resume from prior playback state if possible.
+    if (shouldResume) {
+        setTimeout(async () => {
+            const played = await tryPlay();
+            shouldResume = played;
+            writeState();
+        }, 120);
+    }
 }
 
 // ==========================================
