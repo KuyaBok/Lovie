@@ -12,4 +12,9 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const database = (typeof firebase.database === "function") ? firebase.database() : null;
+window.database = database;
+
+if (!database) {
+  console.warn("Firebase Realtime Database SDK not loaded on this page.");
+}
