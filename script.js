@@ -1124,6 +1124,7 @@ function initMusicPlayer() {
     const MUSIC_STATE_KEY = "loveMusicState";
     const DEFAULT_MUSIC_SRC = "music/YTDown_YouTube_Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Ly_Media_zgaCZOQCpp8_009_128k.mp3";
     let saveThrottle = 0;
+    let resumeInteractionHandler = null;
 
     // Ensure every page has a playable source even if the HTML source tag is missing.
     if (!audio.querySelector("source") && !audio.getAttribute("src")) {
@@ -1182,6 +1183,33 @@ function initMusicPlayer() {
         }
     };
 
+    const clearResumeOnGesture = () => {
+        if (!resumeInteractionHandler) return;
+        ["click", "touchstart", "keydown"].forEach((evt) => {
+            document.removeEventListener(evt, resumeInteractionHandler, true);
+        });
+        resumeInteractionHandler = null;
+    };
+
+    const armResumeOnGesture = () => {
+        if (resumeInteractionHandler) return;
+        resumeInteractionHandler = async () => {
+            if (!shouldResume || !audio.paused) {
+                clearResumeOnGesture();
+                return;
+            }
+            const played = await tryPlay();
+            if (played) {
+                clearResumeOnGesture();
+                writeState();
+            }
+        };
+
+        ["click", "touchstart", "keydown"].forEach((evt) => {
+            document.addEventListener(evt, resumeInteractionHandler, true);
+        });
+    };
+
     const savedState = readState();
     let shouldResume = !!savedState.shouldPlay;
     const resumeAt = Number(savedState.currentTime) || 0;
@@ -1194,6 +1222,7 @@ function initMusicPlayer() {
 
     audio.addEventListener("play", () => {
         applyUi(true);
+        clearResumeOnGesture();
         writeState();
     });
 
@@ -1213,7 +1242,16 @@ function initMusicPlayer() {
     document.addEventListener("visibilitychange", async () => {
         if (!document.hidden && shouldResume && audio.paused) {
             const played = await tryPlay();
-            shouldResume = played;
+            shouldResume = true;
+            if (!played) armResumeOnGesture();
+        }
+    });
+
+    window.addEventListener("pageshow", async () => {
+        if (shouldResume && audio.paused) {
+            const played = await tryPlay();
+            shouldResume = true;
+            if (!played) armResumeOnGesture();
         }
     });
 
@@ -1222,13 +1260,15 @@ function initMusicPlayer() {
 
     musicBtn.addEventListener("click", async () => {
         if (audio.paused) {
+            shouldResume = true;
             const played = await tryPlay();
-            shouldResume = played;
+            if (!played) armResumeOnGesture();
             writeState();
             return;
         }
 
         shouldResume = false;
+        clearResumeOnGesture();
         audio.pause();
         writeState();
     });
@@ -1239,7 +1279,8 @@ function initMusicPlayer() {
     if (shouldResume) {
         setTimeout(async () => {
             const played = await tryPlay();
-            shouldResume = played;
+            shouldResume = true;
+            if (!played) armResumeOnGesture();
             writeState();
         }, 120);
     }
