@@ -1,4 +1,4 @@
-const CACHE_NAME = "love-story-cache-v6";
+const CACHE_NAME = "love-story-cache-v7";
 const ASSETS_TO_CACHE = [
   "/index.html",
   "/story.html",
@@ -51,7 +51,11 @@ self.addEventListener("fetch", (event) => {
   // Always go to network first for pages and app shell files so normal refresh
   // picks up newly deployed content without requiring a hard refresh.
   const isNavigation = event.request.mode === "navigate";
-  const isAppShellFile = ["/", "/index.html", "/script.js", "/styles.css", "/manifest.json", "/sw.js"].includes(url.pathname);
+  const isAppShellFile =
+    ["/", "/index.html", "/manifest.json", "/sw.js"].includes(url.pathname) ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".html");
   if (url.origin === location.origin && (isNavigation || isAppShellFile)) {
     event.respondWith(
       fetch(event.request)
