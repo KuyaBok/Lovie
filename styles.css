@@ -2119,15 +2119,7 @@ body {
     opacity: 0.85;
 }
 
-.appreciation-card .card-expandable {
-    display: none;
-}
-
-.appreciation-card.is-open .card-expandable {
-    display: block;
-}
-
-.appreciation-card.is-open .card-toggle-hint {
+.card-toggle-hint[hidden] {
     display: none;
 }
 

@@ -293,7 +293,9 @@ function initAppreciation() {
                                     <div class="letter-from">${escapeHtml(item.from)}</div>
                                     <div class="letter-date">${escapeHtml(item.date)}</div>
                                 </div>
-                                <div class="letter-content freeform-content card-expandable">${escapeHtml(freeformDisplay)}</div>
+                                <div class="appreciation-details" hidden>
+                                    <div class="letter-content freeform-content">${escapeHtml(freeformDisplay)}</div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -329,13 +331,15 @@ function initAppreciation() {
                                 <div class="letter-from">${escapeHtml(item.from)}</div>
                                 <div class="letter-date">${escapeHtml(item.date)}</div>
                             </div>
-                            <span class="entry-subheading card-expandable">${meta.sourceLabel}</span>
-                            <div class="letter-content card-expandable">${escapeHtml(sourceDisplay)}</div>
-                        </div>
-                        <div class="response-given card-expandable">
-                            <div class="letter-icon">💝</div>
-                            <span class="response-label">${meta.responseLabel}</span>
-                            <div class="letter-content response-content">${escapeHtml(responseDisplay)}</div>
+                            <div class="appreciation-details" hidden>
+                                <span class="entry-subheading">${meta.sourceLabel}</span>
+                                <div class="letter-content">${escapeHtml(sourceDisplay)}</div>
+                                <div class="response-given">
+                                    <div class="letter-icon">💝</div>
+                                    <span class="response-label">${meta.responseLabel}</span>
+                                    <div class="letter-content response-content">${escapeHtml(responseDisplay)}</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -415,12 +419,25 @@ function initAppreciation() {
         const card = event.target.closest(".appreciation-card");
         if (!card) return;
 
-        const wasOpen = card.classList.contains("is-open");
-        const allCards = container.querySelectorAll(".appreciation-card");
-        allCards.forEach((entryCard) => entryCard.classList.remove("is-open"));
+        const clickedDetails = card.querySelector(".appreciation-details");
+        if (!clickedDetails) return;
+
+        const wasOpen = !clickedDetails.hasAttribute("hidden");
+        const allDetails = container.querySelectorAll(".appreciation-details");
+        allDetails.forEach((details) => {
+            details.setAttribute("hidden", "");
+        });
+        const allHints = container.querySelectorAll(".card-toggle-hint");
+        allHints.forEach((hint) => {
+            hint.removeAttribute("hidden");
+        });
 
         if (!wasOpen) {
-            card.classList.add("is-open");
+            clickedDetails.removeAttribute("hidden");
+            const hint = card.querySelector(".card-toggle-hint");
+            if (hint) {
+                hint.setAttribute("hidden", "");
+            }
         }
     });
 
