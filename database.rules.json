@@ -6,6 +6,10 @@
     "letters": {
       ".read": true,
       ".write": true
+    },
+    "galleryItems": {
+      ".read": true,
+      ".write": true
     }
   }
 }

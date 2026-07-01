@@ -547,9 +547,18 @@ async function initGallery() {
     const storageKey = CONFIG.uploadedPhotosKey;
     const firebaseUploadFolder = window.FIREBASE_STORAGE_PATH || CONFIG.firebaseStoragePath;
     const firebaseEnabled = !!(window.firebaseStorage && typeof window.firebaseStorage.ref === "function");
+    const cloudinaryCloudName = (window.CLOUDINARY_CLOUD_NAME || "").trim();
+    const cloudinaryUploadPreset = (window.CLOUDINARY_UPLOAD_PRESET || "").trim();
+    const cloudinaryEnabled = !!(cloudinaryCloudName && cloudinaryUploadPreset);
+    const realtimeDb = window.database || (window.firebase && typeof firebase.database === "function" ? firebase.database() : null);
+    const galleryRef = realtimeDb ? realtimeDb.ref("galleryItems") : null;
     let activeFilter = "all";
 
-    APP.uploadedItems = firebaseEnabled ? await loadFirebaseUploads() : loadUploadedItems();
+    if (galleryRef) {
+        subscribeRealtimeGallery();
+    } else {
+        APP.uploadedItems = firebaseEnabled ? await loadFirebaseUploads() : loadUploadedItems();
+    }
 
     function loadUploadedItems() {
         try {
@@ -703,6 +712,53 @@ async function initGallery() {
         }
     }
 
+    function subscribeRealtimeGallery() {
+        if (!galleryRef) return;
+
+        galleryRef.off();
+        galleryRef.on("value", (snapshot) => {
+            const items = [];
+            snapshot.forEach((child) => {
+                const value = child.val();
+                if (!value || typeof value !== "object") return;
+                items.push({
+                    id: value.id || child.key,
+                    src: value.src,
+                    title: value.title || "Memory",
+                    date: value.date || "",
+                    category: "custom",
+                    author: value.author || "",
+                    createdAt: value.createdAt || 0,
+                    publicId: value.publicId || "",
+                });
+            });
+
+            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            APP.uploadedItems = items;
+            renderGallery(activeFilter);
+        }, (error) => {
+            console.error("Realtime gallery sync error:", error);
+        });
+    }
+
+    async function uploadToCloudinary(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", cloudinaryUploadPreset);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(errorBody || "Cloudinary upload failed");
+        }
+
+        return response.json();
+    }
+
     async function handleUpload(files) {
         if (!files || files.length === 0) return;
 
@@ -725,7 +781,30 @@ async function initGallery() {
             APP.uploadedItems.unshift(tempItem);
             renderGallery(activeFilter);
 
-            if (firebaseEnabled) {
+            if (galleryRef && cloudinaryEnabled) {
+                try {
+                    const result = await uploadToCloudinary(uploadFile);
+                    const entryRef = galleryRef.push();
+                    const currentUser = (typeof getCurrentUser === "function" && getCurrentUser()) || "unknown";
+
+                    await entryRef.set({
+                        id: entryRef.key,
+                        src: result.secure_url,
+                        title: uploadFile.name,
+                        date: formatUploadDate(new Date()),
+                        category: "custom",
+                        author: currentUser,
+                        publicId: result.public_id || "",
+                        createdAt: Date.now(),
+                    });
+                } catch (error) {
+                    console.error("Cloudinary upload error:", error);
+                    alert(`Upload failed: ${error.message || "Cloudinary upload error"}`);
+                    tempItem.error = true;
+                    delete tempItem.uploading;
+                    renderGallery(activeFilter);
+                }
+            } else if (firebaseEnabled) {
                 try {
                     const safeName = `${Date.now()}_${uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
                     const storageRef = window.firebaseStorage.ref(`${firebaseUploadFolder}/${safeName}`);
@@ -749,6 +828,10 @@ async function initGallery() {
                     renderGallery(activeFilter);
                 };
                 reader.readAsDataURL(uploadFile);
+            }
+
+            if (!galleryRef && !firebaseEnabled) {
+                saveUploadedItems();
             }
         }
     }
