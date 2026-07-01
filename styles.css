@@ -1521,7 +1521,7 @@ body {
     box-shadow: var(--shadow-glow);
 }
 
-.letter-content {
+.letter-card .letter-content {
     background: var(--white);
     border-radius: var(--border-radius);
     padding: 36px;

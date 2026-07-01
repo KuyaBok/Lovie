@@ -92,6 +92,7 @@ function initAppreciation() {
     const currentUser = currentUserRaw.toLowerCase();
     let activeType = "letters";
     let editingIndex = -1;
+    let expandedEntryId = null;
 
     function sortEntries(list) {
         return list.sort((a, b) => {
@@ -276,8 +277,11 @@ function initAppreciation() {
                         "No freeform content yet."
                     );
 
+                    const isOpen = expandedEntryId && item.id === expandedEntryId;
+                    const collapsedClass = isOpen ? "" : " is-collapsed";
+
                     return `
-                        <div class="appreciation-card is-collapsed" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        <div class="appreciation-card${collapsedClass}" data-index="${index}" data-entry-id="${escapeHtml(item.id || "")}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                             ${actionButtons}
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
@@ -312,8 +316,11 @@ function initAppreciation() {
                     "No response/appreciation yet."
                 );
 
+                const isOpen = expandedEntryId && item.id === expandedEntryId;
+                const collapsedClass = isOpen ? "" : " is-collapsed";
+
                 return `
-                    <div class="appreciation-card is-collapsed" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                    <div class="appreciation-card${collapsedClass}" data-index="${index}" data-entry-id="${escapeHtml(item.id || "")}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                         ${actionButtons}
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
@@ -410,13 +417,11 @@ function initAppreciation() {
         const card = event.target.closest(".appreciation-card");
         if (!card) return;
 
-        const wasCollapsed = card.classList.contains("is-collapsed");
-        const allCards = container.querySelectorAll(".appreciation-card");
-        allCards.forEach((entryCard) => entryCard.classList.add("is-collapsed"));
+        const entryId = card.dataset.entryId || null;
+        if (!entryId) return;
 
-        if (wasCollapsed) {
-            card.classList.remove("is-collapsed");
-        }
+        expandedEntryId = expandedEntryId === entryId ? null : entryId;
+        renderEntries();
     });
 
     saveBtn.addEventListener("click", () => {
