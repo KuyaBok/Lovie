@@ -175,12 +175,15 @@ function initAppreciation() {
                         : "";
                     const ownerLabel = `By ${escapeHtml(getOwnerDisplayName(item.createdBy))}`;
                     const freeformDisplay = getDisplayText(
-                        item.freeformText,
+                        sanitizeEntryText(item.freeformText),
                         "No freeform content yet."
                     );
+                    const cardModeClass = canManageEntry(item)
+                        ? " appreciation-card-manageable"
+                        : "";
 
                     return `
-                        <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        <div class="appreciation-card${cardModeClass}" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                             ${actionButtons}
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
@@ -206,16 +209,19 @@ function initAppreciation() {
                     : "";
                 const ownerLabel = `By ${escapeHtml(getOwnerDisplayName(item.createdBy))}`;
                 const sourceDisplay = getDisplayText(
-                    item.sourceText,
+                    sanitizeEntryText(item.sourceText),
                     `No ${meta.sourceLabel.toLowerCase()} content yet.`
                 );
                 const responseDisplay = getDisplayText(
-                    item.responseText,
+                    sanitizeEntryText(item.responseText),
                     "No response/appreciation yet."
                 );
+                const cardModeClass = canManageEntry(item)
+                    ? " appreciation-card-manageable"
+                    : "";
 
                 return `
-                    <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                    <div class="appreciation-card${cardModeClass}" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                         ${actionButtons}
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
@@ -284,18 +290,31 @@ function initAppreciation() {
 
     container.addEventListener("click", (event) => {
         const actionButton = event.target.closest(".entry-action-btn");
-        if (!actionButton) return;
+        if (actionButton) {
+            const index = Number(actionButton.dataset.index);
+            if (!Number.isInteger(index) || index < 0 || index >= entries.length) {
+                return;
+            }
 
-        const index = Number(actionButton.dataset.index);
+            const action = actionButton.dataset.action;
+            if (action === "edit") {
+                openEditor(index);
+            } else if (action === "delete") {
+                deleteEntry(index);
+            }
+            return;
+        }
+
+        const card = event.target.closest(".appreciation-card");
+        if (!card) return;
+
+        const index = Number(card.dataset.index);
         if (!Number.isInteger(index) || index < 0 || index >= entries.length) {
             return;
         }
 
-        const action = actionButton.dataset.action;
-        if (action === "edit") {
+        if (canManageEntry(entries[index])) {
             openEditor(index);
-        } else if (action === "delete") {
-            deleteEntry(index);
         }
     });
 
@@ -433,6 +452,15 @@ function escapeHtml(value) {
 function getDisplayText(value, fallback) {
     const text = String(value || "").trim();
     return text || fallback;
+}
+
+function sanitizeEntryText(value) {
+    const text = String(value || "").trim();
+    const lower = text.toLowerCase();
+    if (lower === "letter" || lower === "response / appreciation") {
+        return "";
+    }
+    return text;
 }
 
 function getOwnerDisplayName(owner) {
