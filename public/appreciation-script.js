@@ -107,7 +107,7 @@ function initAppreciation() {
         renderEntries();
     }
 
-    function initAppreciationRealtime(localEntries) {
+    function initAppreciationRealtime(initialLocalEntries) {
         if (!window.firebase || typeof firebase.database !== "function") {
             return false;
         }
@@ -118,7 +118,8 @@ function initAppreciation() {
         }
 
         appreciationRef = db.ref(APPRECIATION_DB_PATH);
-        let hasAttemptedSeed = false;
+        let hasProcessedFirstSnapshot = false;
+        let hasSeededFromLocal = false;
 
         appreciationRef.on("value", (snapshot) => {
             const syncedEntries = [];
@@ -133,21 +134,25 @@ function initAppreciation() {
                 }
             });
 
-            if (
-                syncedEntries.length === 0 &&
-                localEntries.length > 0 &&
-                !hasAttemptedSeed
-            ) {
-                hasAttemptedSeed = true;
-                seedLocalEntriesToFirebase(localEntries);
-                setEntries(localEntries);
-                return;
+            if (!hasProcessedFirstSnapshot) {
+                hasProcessedFirstSnapshot = true;
+
+                if (
+                    syncedEntries.length === 0 &&
+                    initialLocalEntries.length > 0 &&
+                    !hasSeededFromLocal
+                ) {
+                    hasSeededFromLocal = true;
+                    seedLocalEntriesToFirebase(initialLocalEntries);
+                    setEntries(initialLocalEntries);
+                    return;
+                }
             }
 
             setEntries(syncedEntries);
         }, (error) => {
             console.error("Appreciation realtime read failed:", error);
-            setEntries(localEntries);
+            setEntries(entries.length > 0 ? entries : initialLocalEntries);
         });
 
         return true;
@@ -369,7 +374,7 @@ function initAppreciation() {
         if (!item || !canManageEntry(item)) return;
         if (!window.confirm("Delete this appreciation entry?")) return;
 
-        if (appreciationRef && item.id && !String(item.id).startsWith("local-")) {
+        if (appreciationRef && item.id) {
             appreciationRef.child(item.id).remove((error) => {
                 if (error) {
                     console.error("Failed to delete appreciation entry:", error);
@@ -427,7 +432,15 @@ function initAppreciation() {
             return;
         }
 
-        const entryId = editingItem?.id || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+        const generatedId =
+            appreciationRef && typeof appreciationRef.push === "function"
+                ? appreciationRef.push().key
+                : `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+        const entryId = editingItem?.id || generatedId;
+        if (!entryId) {
+            alert("Unable to create appreciation entry. Please try again.");
+            return;
+        }
         const createdByValue = editingItem?.createdBy || currentUserRaw || currentUser || null;
         const createdAtValue = editingItem?.createdAt || Date.now();
         const timestampValue = editingItem?.timestamp || new Date(createdAtValue).toISOString();
