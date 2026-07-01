@@ -17,15 +17,13 @@ function initLettersSync() {
     // Load existing letters and listen for changes
     lettersRef.on('value', (snapshot) => {
         allLetters = [];
-        const data = snapshot.val();
 
-        if (data) {
-            Object.values(data).forEach(letter => {
-                if (letter && typeof letter === 'object') {
-                    allLetters.push(letter);
-                }
-            });
-        }
+        snapshot.forEach((child) => {
+            const letter = child.val();
+            if (letter && typeof letter === 'object') {
+                allLetters.push({ ...letter, id: letter.id || child.key });
+            }
+        });
 
         allLetters.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
         renderLetters();
@@ -40,20 +38,21 @@ function addLetter(seal, letterFrom, letterDate, letterText) {
         return;
     }
 
-    const letterId = Date.now().toString();
+    const newRef = lettersRef.push();
+    const letterId = newRef.key;
     const newLetter = {
         id: letterId,
         seal: seal || '💌',
         letterFrom: letterFrom || formatUsername(currentUser),
         letterDate: letterDate || 'Forever',
-        letterText: letterText,
+        letterText: String(letterText || '').trim(),
         author: currentUser,
         timestamp: new Date().toISOString(),
         createdAt: Date.now()
     };
 
     // Save to Firebase
-    lettersRef.child(letterId).set(newLetter, (error) => {
+    newRef.set(newLetter, (error) => {
         if (error) {
             alert('Failed to save letter. Please try again.');
             console.error('Firebase write error:', error);
@@ -120,7 +119,7 @@ function renderLetters() {
                         </div>
                     </div>
                     <div class="letter-body">
-                        ${letter.letterText}
+                        ${String(letter.letterText || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}
                     </div>
                 </div>
                 ${isAuthor ? `

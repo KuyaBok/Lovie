@@ -773,6 +773,12 @@ function createConfettiPiece(container, colors) {
 // Letters
 // ==========================================
 function initLetters() {
+    // The letters page uses realtime Firebase sync via letters-sync.js.
+    // Skip localStorage-based letters logic there to avoid conflicting renders.
+    if (document.body && document.body.dataset.lettersSync === "true") {
+        return;
+    }
+
     const lettersContainer = document.querySelector(".letters-container");
     const addLetterBtn = document.getElementById("addLetterBtn");
     const letterForm = document.getElementById("letterForm");
