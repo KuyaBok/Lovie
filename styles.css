@@ -1950,13 +1950,19 @@ body {
     position: absolute;
     inset: 0;
     background: linear-gradient(180deg, transparent, rgba(236, 232, 240, 0.2), transparent);
-    z-index: 1;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .appreciation-section {
     position: relative;
     text-align: center;
     overflow: hidden;
+}
+
+.appreciation-section > *:not(.appreciation-bg) {
+    position: relative;
+    z-index: 1;
 }
 
 .appreciation-actions {
