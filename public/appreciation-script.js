@@ -2,18 +2,30 @@
    APPRECIATION PAGE - Letters & Responses
    ============================================ */
 
-const APPRECIATION_STORAGE_KEY = "appreciationLetters";
+const APPRECIATION_STORAGE_KEY = "appreciationEntries";
 
-const DEFAULT_APPRECIATION = [
-    {
-        letterIcon: "💌",
-        letterFrom: "From: You",
-        letterDate: "A moment in time",
-        letterText: "Your letter will appear here once you add it. Share your thoughts, your feelings, and the moments that matter most to you.",
-        responseIcon: "💝",
-        responseText: "This is where I'll share my heartfelt response and appreciation for every word you wrote. Your letters mean the world to me.",
+const TYPE_META = {
+    letters: {
+        icon: "💌",
+        title: "Letters",
+        sourceLabel: "Letter",
+        sourcePlaceholder: "Write the letter here...",
+        responseLabel: "Response / Appreciation",
+        responsePlaceholder: "Write your response here...",
     },
-];
+    actions: {
+        icon: "✨",
+        title: "Actions",
+        sourceLabel: "Action",
+        sourcePlaceholder: "Describe the action you appreciate...",
+        responseLabel: "Response / Appreciation",
+        responsePlaceholder: "Write your appreciation here...",
+    },
+    freeform: {
+        icon: "📝",
+        title: "Freeform",
+    },
+};
 
 document.addEventListener("DOMContentLoaded", () => {
     initFloatingHearts();
@@ -34,43 +46,253 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initAppreciation() {
     const container = document.getElementById("appreciationContainer");
-    if (!container) return;
+    const addBtn = document.getElementById("addAppreciationBtn");
+    const form = document.getElementById("appreciationForm");
+    const saveBtn = document.getElementById("saveAppreciationBtn");
+    const cancelBtn = document.getElementById("cancelAppreciationBtn");
+    const typeOptions = Array.from(document.querySelectorAll(".type-option"));
+    const fromInput = document.getElementById("appreciationFrom");
+    const dateInput = document.getElementById("appreciationDate");
+    const sourceRow = document.getElementById("sourceRow");
+    const responseRow = document.getElementById("responseRow");
+    const sourceLabel = document.getElementById("sourceLabel");
+    const responseLabel = document.getElementById("responseLabel");
+    const sourceText = document.getElementById("sourceText");
+    const responseText = document.getElementById("responseText");
+    const freeformRow = document.getElementById("freeformRow");
+    const freeformText = document.getElementById("freeformText");
 
-    const stored = localStorage.getItem(APPRECIATION_STORAGE_KEY);
-    const letters = stored ? JSON.parse(stored) : DEFAULT_APPRECIATION;
-
-    if (letters.length === 0) {
-        container.innerHTML = `
-            <div class="appreciation-empty" style="grid-column: 1 / -1;">
-                <div class="appreciation-empty-icon">💌</div>
-                <p class="appreciation-empty-text">No letters yet</p>
-                <p class="appreciation-empty-text" style="font-size: 0.95rem; font-family: var(--font-body); font-style: normal;">Share a letter and I'll respond with my appreciation</p>
-            </div>
-        `;
+    if (
+        !container ||
+        !addBtn ||
+        !form ||
+        !saveBtn ||
+        !cancelBtn ||
+        !fromInput ||
+        !dateInput ||
+        !sourceRow ||
+        !responseRow ||
+        !sourceLabel ||
+        !responseLabel ||
+        !sourceText ||
+        !responseText ||
+        !freeformRow ||
+        !freeformText ||
+        typeOptions.length === 0
+    ) {
         return;
     }
 
-    container.innerHTML = letters
-        .map(
-            (item, index) => `
-        <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
-            <div class="letter-received">
-                <div class="letter-icon">${item.letterIcon}</div>
-                <div class="letter-header">
-                    <div class="letter-from">${item.letterFrom}</div>
-                    <div class="letter-date">${item.letterDate}</div>
+    const entries = loadAppreciationEntries();
+    let activeType = "letters";
+
+    function setActiveType(type) {
+        activeType = TYPE_META[type] ? type : "letters";
+        typeOptions.forEach((button) => {
+            button.classList.toggle("active", button.dataset.type === activeType);
+        });
+
+        if (activeType === "freeform") {
+            sourceRow.classList.add("hidden");
+            responseRow.classList.add("hidden");
+            freeformRow.classList.remove("hidden");
+            return;
+        }
+
+        const meta = TYPE_META[activeType];
+        sourceLabel.textContent = meta.sourceLabel;
+        responseLabel.textContent = meta.responseLabel;
+        sourceText.placeholder = meta.sourcePlaceholder;
+        responseText.placeholder = meta.responsePlaceholder;
+
+        sourceRow.classList.remove("hidden");
+        responseRow.classList.remove("hidden");
+        freeformRow.classList.add("hidden");
+    }
+
+    function resetForm() {
+        fromInput.value = "";
+        dateInput.value = "";
+        sourceText.value = "";
+        responseText.value = "";
+        freeformText.value = "";
+        setActiveType("letters");
+    }
+
+    function showForm() {
+        form.classList.remove("hidden");
+        form.classList.add("visible");
+    }
+
+    function hideForm() {
+        form.classList.remove("visible");
+        form.classList.add("hidden");
+        resetForm();
+    }
+
+    function renderEntries() {
+        if (entries.length === 0) {
+            container.innerHTML = `
+                <div class="appreciation-empty" style="grid-column: 1 / -1;">
+                    <div class="appreciation-empty-icon">💝</div>
+                    <p class="appreciation-empty-text">No appreciations yet</p>
+                    <p class="appreciation-empty-subtext">Tap "I Appreciate You" to add one.</p>
                 </div>
-                <div class="letter-content">${item.letterText}</div>
-            </div>
-            <div class="response-given">
-                <div class="letter-icon">${item.responseIcon}</div>
-                <span class="response-label">My Response</span>
-                <div class="letter-content" style="font-style: normal;">${item.responseText}</div>
-            </div>
-        </div>
-    `
-        )
-        .join("");
+            `;
+            return;
+        }
+
+        container.innerHTML = entries
+            .map((item, index) => {
+                const type = TYPE_META[item.type] ? item.type : "letters";
+                const meta = TYPE_META[type];
+
+                if (type === "freeform") {
+                    return `
+                        <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                            <div class="letter-received freeform-received">
+                                <div class="letter-icon">${meta.icon}</div>
+                                <div class="appreciation-entry-type">${meta.title}</div>
+                                <div class="letter-header">
+                                    <div class="letter-from">${escapeHtml(item.from)}</div>
+                                    <div class="letter-date">${escapeHtml(item.date)}</div>
+                                </div>
+                                <div class="letter-content freeform-content">${escapeHtml(item.freeformText)}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        <div class="letter-received">
+                            <div class="letter-icon">${meta.icon}</div>
+                            <div class="appreciation-entry-type">${meta.title}</div>
+                            <div class="letter-header">
+                                <div class="letter-from">${escapeHtml(item.from)}</div>
+                                <div class="letter-date">${escapeHtml(item.date)}</div>
+                            </div>
+                            <span class="entry-subheading">${meta.sourceLabel}</span>
+                            <div class="letter-content">${escapeHtml(item.sourceText)}</div>
+                        </div>
+                        <div class="response-given">
+                            <div class="letter-icon">💝</div>
+                            <span class="response-label">${meta.responseLabel}</span>
+                            <div class="letter-content response-content">${escapeHtml(item.responseText)}</div>
+                        </div>
+                    </div>
+                `;
+            })
+            .join("");
+    }
+
+    typeOptions.forEach((button) => {
+        button.addEventListener("click", () => setActiveType(button.dataset.type));
+    });
+
+    addBtn.addEventListener("click", showForm);
+    cancelBtn.addEventListener("click", hideForm);
+
+    saveBtn.addEventListener("click", () => {
+        const from = fromInput.value.trim() || "From: You";
+        const date = dateInput.value.trim() || "A moment in time";
+
+        if (activeType === "freeform") {
+            const freeformValue = freeformText.value.trim();
+            if (!freeformValue) return;
+
+            entries.unshift({
+                type: "freeform",
+                from,
+                date,
+                freeformText: freeformValue,
+            });
+        } else {
+            const sourceValue = sourceText.value.trim();
+            const responseValue = responseText.value.trim();
+            if (!sourceValue || !responseValue) return;
+
+            entries.unshift({
+                type: activeType,
+                from,
+                date,
+                sourceText: sourceValue,
+                responseText: responseValue,
+            });
+        }
+
+        localStorage.setItem(APPRECIATION_STORAGE_KEY, JSON.stringify(entries));
+        renderEntries();
+        hideForm();
+    });
+
+    setActiveType("letters");
+    renderEntries();
+}
+
+function loadAppreciationEntries() {
+    const stored = localStorage.getItem(APPRECIATION_STORAGE_KEY);
+    if (!stored) return [];
+
+    try {
+        const parsed = JSON.parse(stored);
+        if (!Array.isArray(parsed)) return [];
+
+        return parsed
+            .map((item) => normalizeAppreciationEntry(item))
+            .filter((item) => item !== null);
+    } catch (error) {
+        console.error("Failed to parse appreciation entries:", error);
+        return [];
+    }
+}
+
+function normalizeAppreciationEntry(item) {
+    if (!item || typeof item !== "object") return null;
+
+    if (item.type && TYPE_META[item.type]) {
+        if (item.type === "freeform") {
+            if (!item.freeformText) return null;
+            return {
+                type: "freeform",
+                from: item.from || "From: You",
+                date: item.date || "A moment in time",
+                freeformText: item.freeformText,
+            };
+        }
+
+        if (!item.sourceText || !item.responseText) return null;
+        return {
+            type: item.type,
+            from: item.from || "From: You",
+            date: item.date || "A moment in time",
+            sourceText: item.sourceText,
+            responseText: item.responseText,
+        };
+    }
+
+    // Backward compatibility for existing letter/response entries.
+    if (item.letterText && item.responseText) {
+        return {
+            type: "letters",
+            from: item.letterFrom || "From: You",
+            date: item.letterDate || "A moment in time",
+            sourceText: item.letterText,
+            responseText: item.responseText,
+        };
+    }
+
+    return null;
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/\n/g, "<br>");
 }
 
 // Import shared functions from main script

@@ -815,31 +815,6 @@ body {
     transition: var(--transition);
     border: 3px solid rgba(255, 255, 255, 0.6);
 }
-.gallery-item {
-    position: relative;
-}
-.gallery-remove-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 5;
-    border: none;
-    border-radius: 999px;
-    background: rgba(25, 18, 30, 0.72);
-    color: #fff;
-    width: 34px;
-    height: 34px;
-    cursor: pointer;
-    font-size: 15px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.18s ease, background 0.18s ease;
-}
-.gallery-remove-btn:hover {
-    background: rgba(200, 65, 100, 0.9);
-    transform: scale(1.05);
-}
 
 .gallery-item:hover {
     transform: translateY(-8px) rotate(-1deg);
@@ -1079,6 +1054,41 @@ body {
     gap: 16px;
     margin-bottom: 26px;
     flex-wrap: wrap;
+}
+.gallery-empty {
+    width: 100%;
+    text-align: center;
+    font-size: 1.05rem;
+    color: #7a6d77;
+    padding: 2rem 1rem;
+}
+
+.gallery-item {
+    position: relative;
+}
+
+.gallery-remove-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    border: none;
+    border-radius: 999px;
+    background: rgba(25, 18, 30, 0.72);
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.gallery-remove-btn:hover {
+    background: rgba(200, 65, 100, 0.9);
+    transform: scale(1.05);
 }
 
 .upload-btn {
@@ -1949,6 +1959,127 @@ body {
     overflow: hidden;
 }
 
+.appreciation-actions {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 18px;
+}
+
+.appreciate-btn,
+.save-appreciation-btn,
+.cancel-appreciation-btn {
+    padding: 12px 24px;
+    border-radius: 999px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.appreciate-btn,
+.save-appreciation-btn {
+    background: var(--gradient-accent);
+    color: var(--white);
+}
+
+.cancel-appreciation-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--rose-dark);
+    border: 1px solid rgba(196, 160, 160, 0.5);
+}
+
+.appreciate-btn:hover,
+.save-appreciation-btn:hover,
+.cancel-appreciation-btn:hover {
+    transform: translateY(-1px);
+}
+
+.appreciation-form {
+    margin: 16px auto 28px;
+    max-width: 980px;
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    border-radius: var(--border-radius);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(196, 160, 160, 0.35);
+    box-shadow: var(--shadow-soft);
+    text-align: left;
+}
+
+.appreciation-form.hidden {
+    display: none;
+}
+
+.appreciation-form.visible {
+    display: grid;
+}
+
+.appreciation-form .form-row {
+    display: grid;
+    gap: 8px;
+}
+
+.appreciation-form .full-row {
+    grid-column: 1 / -1;
+}
+
+.appreciation-form label {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.appreciation-form input,
+.appreciation-form textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(196, 160, 160, 0.35);
+    background: rgba(255, 255, 255, 0.98);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    resize: vertical;
+}
+
+.appreciation-form textarea {
+    min-height: 120px;
+}
+
+.type-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.type-option {
+    border: 1px solid rgba(196, 160, 160, 0.45);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--rose-dark);
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.type-option:hover {
+    transform: translateY(-1px);
+}
+
+.type-option.active {
+    background: var(--gradient-accent);
+    color: var(--white);
+    border-color: transparent;
+}
+
+.appreciation-form .form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .appreciation-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -2003,6 +2134,39 @@ body {
     background: linear-gradient(135deg, #f8f3f0, #f0ebe8);
     padding: 36px;
     border-left: 4px solid var(--lavender);
+}
+
+.appreciation-entry-type {
+    display: inline-block;
+    margin-bottom: 10px;
+    font-size: 0.76rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: var(--rose-dark);
+    background: rgba(216, 192, 184, 0.28);
+    font-weight: 600;
+}
+
+.entry-subheading,
+.response-label {
+    display: block;
+    margin-bottom: 8px;
+    font-family: var(--font-script);
+    font-size: 1.05rem;
+    color: var(--lavender-dark);
+    font-weight: 600;
+    text-align: left;
+}
+
+.response-content,
+.freeform-content {
+    font-style: normal;
+}
+
+.freeform-received {
+    border-left-color: var(--lavender);
 }
 
 .response-title {
@@ -2070,17 +2234,44 @@ body {
     margin-bottom: 8px;
 }
 
+.appreciation-empty-subtext {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
 /* --- Responsive Appreciation --- */
 @media (max-width: 900px) {
     .appreciation-container {
         grid-template-columns: 1fr;
         gap: 32px;
     }
+
+    .appreciation-form {
+        padding: 18px;
+    }
 }
 
 @media (max-width: 480px) {
     .appreciation-container {
         gap: 24px;
+    }
+
+    .type-options {
+        gap: 8px;
+    }
+
+    .type-option {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .appreciation-form .form-actions {
+        justify-content: stretch;
+    }
+
+    .save-appreciation-btn,
+    .cancel-appreciation-btn {
+        width: 100%;
     }
 
     .letter-received,

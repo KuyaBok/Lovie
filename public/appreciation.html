@@ -75,6 +75,43 @@
             <h2 class="section-title">Letters & Responses</h2>
             <p class="section-subtitle">Every word you wrote touched my heart</p>
         </div>
+        <div class="appreciation-actions">
+            <button type="button" class="appreciate-btn" id="addAppreciationBtn">I Appreciate You</button>
+        </div>
+        <div class="appreciation-form hidden" id="appreciationForm">
+            <div class="form-row full-row">
+                <label>Choose a type</label>
+                <div class="type-options" id="appreciationTypeOptions">
+                    <button type="button" class="type-option active" data-type="letters">Letters</button>
+                    <button type="button" class="type-option" data-type="actions">Actions</button>
+                    <button type="button" class="type-option" data-type="freeform">Freeform</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="appreciationFrom">From</label>
+                <input type="text" id="appreciationFrom" placeholder="From: You">
+            </div>
+            <div class="form-row">
+                <label for="appreciationDate">Date</label>
+                <input type="text" id="appreciationDate" placeholder="A moment in time">
+            </div>
+            <div class="form-row full-row" id="sourceRow">
+                <label for="sourceText" id="sourceLabel">Letter</label>
+                <textarea id="sourceText" rows="4" placeholder="Write the letter here..."></textarea>
+            </div>
+            <div class="form-row full-row" id="responseRow">
+                <label for="responseText" id="responseLabel">Response / Appreciation</label>
+                <textarea id="responseText" rows="4" placeholder="Write your response here..."></textarea>
+            </div>
+            <div class="form-row full-row hidden" id="freeformRow">
+                <label for="freeformText">Freeform Appreciation</label>
+                <textarea id="freeformText" rows="5" placeholder="Write your freeform appreciation here..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="save-appreciation-btn" id="saveAppreciationBtn">Save</button>
+                <button type="button" class="cancel-appreciation-btn" id="cancelAppreciationBtn">Cancel</button>
+            </div>
+        </div>
         <div class="appreciation-container" id="appreciationContainer">
             <!-- Letters will be loaded here -->
         </div>
