@@ -641,6 +641,13 @@ async function initGallery() {
         newItems.forEach((el) => observer.observe(el));
     }
 
+    function setActiveFilter(nextFilter) {
+        activeFilter = nextFilter;
+        filterBtns.forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.filter === nextFilter);
+        });
+    }
+
     function formatUploadDate(date) {
         return date.toLocaleDateString(undefined, {
             year: "numeric",
@@ -828,6 +835,9 @@ async function initGallery() {
     async function handleUpload(files) {
         if (!files || files.length === 0) return;
 
+        // Ensure freshly uploaded images are visible right away.
+        setActiveFilter("all");
+
         for (const file of Array.from(files)) {
             const baseName = file.name.replace(/\.[^/.]+$/, "");
             const customTitleInput = window.prompt("Photo title (this shows below the image):", baseName);
@@ -913,9 +923,7 @@ async function initGallery() {
 
     filterBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
-            filterBtns.forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
-            activeFilter = btn.dataset.filter;
+            setActiveFilter(btn.dataset.filter);
             renderGallery(activeFilter);
         });
     });
