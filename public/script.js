@@ -542,6 +542,7 @@ async function initGallery() {
     if (!grid) return;
 
     const filterBtns = document.querySelectorAll(".filter-btn");
+    const uploadArea = document.querySelector(".gallery-upload");
     const uploadBtn = document.getElementById("uploadBtn");
     const uploadInput = document.getElementById("photoUpload");
     const storageKey = CONFIG.uploadedPhotosKey;
@@ -646,6 +647,21 @@ async function initGallery() {
         filterBtns.forEach((btn) => {
             btn.classList.toggle("active", btn.dataset.filter === nextFilter);
         });
+    }
+
+    let uploadStatusEl = null;
+    if (uploadArea) {
+        uploadStatusEl = document.createElement("p");
+        uploadStatusEl.className = "upload-status";
+        uploadStatusEl.hidden = true;
+        uploadArea.appendChild(uploadStatusEl);
+    }
+
+    function setUploadStatus(message, type = "info") {
+        if (!uploadStatusEl) return;
+        uploadStatusEl.textContent = message;
+        uploadStatusEl.className = `upload-status upload-status-${type}`;
+        uploadStatusEl.hidden = !message;
     }
 
     function formatUploadDate(date) {
@@ -833,10 +849,19 @@ async function initGallery() {
     }
 
     async function handleUpload(files) {
-        if (!files || files.length === 0) return;
+        if (!files || files.length === 0) {
+            setUploadStatus("No photo selected.", "warn");
+            return;
+        }
 
         // Ensure freshly uploaded images are visible right away.
         setActiveFilter("all");
+        uploadBtn.setAttribute("aria-busy", "true");
+        uploadBtn.classList.add("is-uploading");
+        setUploadStatus(`Uploading ${files.length} photo${files.length > 1 ? "s" : ""}...`, "info");
+
+        let successCount = 0;
+        let failCount = 0;
 
         for (const file of Array.from(files)) {
             const baseName = file.name.replace(/\.[^/.]+$/, "");
@@ -878,12 +903,16 @@ async function initGallery() {
                         publicId: result.public_id || "",
                         createdAt: Date.now(),
                     });
+                    successCount += 1;
+                    setUploadStatus("Upload complete. Syncing gallery...", "success");
                 } catch (error) {
                     console.error("Cloudinary upload error:", error);
                     alert(`Upload failed: ${error.message || "Cloudinary upload error"}`);
                     tempItem.error = true;
                     delete tempItem.uploading;
                     renderGallery(activeFilter);
+                    failCount += 1;
+                    setUploadStatus(`Upload failed: ${error.message || "Cloudinary upload error"}`, "error");
                 }
             } else if (firebaseEnabled) {
                 try {
@@ -898,26 +927,50 @@ async function initGallery() {
                     delete tempItem.uploading;
                     APP.uploadedItems = await loadFirebaseUploads();
                     renderGallery(activeFilter);
+                    successCount += 1;
+                    setUploadStatus("Upload complete.", "success");
                 } catch (error) {
                     console.error("Firebase upload error:", error);
                     alert(`Upload failed: ${error.code || error.message || "Unknown error"}`);
                     tempItem.error = true;
                     delete tempItem.uploading;
                     renderGallery(activeFilter);
+                    failCount += 1;
+                    setUploadStatus(`Upload failed: ${error.code || error.message || "Unknown error"}`, "error");
                 }
             } else {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    tempItem.src = reader.result;
-                    saveUploadedItems();
-                    renderGallery(activeFilter);
-                };
-                reader.readAsDataURL(uploadFile);
+                await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        tempItem.src = reader.result;
+                        saveUploadedItems();
+                        renderGallery(activeFilter);
+                        successCount += 1;
+                        resolve();
+                    };
+                    reader.onerror = () => reject(new Error("Could not read image file."));
+                    reader.readAsDataURL(uploadFile);
+                }).catch((error) => {
+                    console.error("Local upload error:", error);
+                    failCount += 1;
+                    setUploadStatus("Upload failed: Could not read image file.", "error");
+                });
             }
 
             if (!galleryRef && !firebaseEnabled) {
                 saveUploadedItems();
             }
+        }
+
+        uploadBtn.removeAttribute("aria-busy");
+        uploadBtn.classList.remove("is-uploading");
+
+        if (successCount > 0 && failCount === 0) {
+            setUploadStatus(`Uploaded ${successCount} photo${successCount > 1 ? "s" : ""} successfully.`, "success");
+        } else if (successCount > 0 && failCount > 0) {
+            setUploadStatus(`Uploaded ${successCount}, failed ${failCount}.`, "warn");
+        } else if (failCount > 0) {
+            setUploadStatus("Upload failed. Please try again.", "error");
         }
     }
 

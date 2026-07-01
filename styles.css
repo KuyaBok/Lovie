@@ -1112,6 +1112,35 @@ body {
     font-size: 0.95rem;
 }
 
+.upload-btn.is-uploading {
+    opacity: 0.7;
+    cursor: progress;
+}
+
+.upload-status {
+    width: 100%;
+    margin-top: 6px;
+    text-align: center;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.upload-status-info {
+    color: var(--text-secondary);
+}
+
+.upload-status-success {
+    color: #3b7f4f;
+}
+
+.upload-status-warn {
+    color: #9a6a2a;
+}
+
+.upload-status-error {
+    color: #a33a4a;
+}
+
 .visually-hidden-file-input {
     position: absolute;
     width: 1px;
