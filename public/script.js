@@ -88,7 +88,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (ENABLE_PWA) {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch((error) => {
+            navigator.serviceWorker.register('sw.js').then((registration) => {
+                // Force quick adoption of newly deployed SW in installed/mobile PWA.
+                const requestActivate = (worker) => {
+                    if (worker) {
+                        worker.postMessage('SKIP_WAITING');
+                    }
+                };
+
+                requestActivate(registration.waiting);
+
+                registration.addEventListener('updatefound', () => {
+                    const installing = registration.installing;
+                    if (!installing) return;
+                    installing.addEventListener('statechange', () => {
+                        if (installing.state === 'installed') {
+                            requestActivate(registration.waiting);
+                        }
+                    });
+                });
+
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!window.__swReloadedOnce) {
+                        window.__swReloadedOnce = true;
+                        window.location.reload();
+                    }
+                });
+            }).catch((error) => {
                 console.error('Service Worker registration failed:', error);
             });
         }
@@ -604,6 +630,58 @@ async function initGallery() {
         });
     }
 
+    async function optimizeImageForUpload(file) {
+        if (!file || !file.type || !file.type.startsWith("image/")) {
+            return file;
+        }
+
+        const maxSide = 2048;
+        const quality = 0.86;
+
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error("Could not read selected image."));
+            reader.readAsDataURL(file);
+        });
+
+        const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error("Could not decode selected image."));
+            image.src = dataUrl;
+        });
+
+        let { width, height } = img;
+        const longestSide = Math.max(width, height);
+        if (longestSide > maxSide) {
+            const scale = maxSide / longestSide;
+            width = Math.max(1, Math.round(width * scale));
+            height = Math.max(1, Math.round(height * scale));
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return file;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const webpBlob = await new Promise((resolve) =>
+            canvas.toBlob(resolve, "image/webp", quality)
+        );
+        const finalBlob = webpBlob || (await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality)));
+        if (!finalBlob) return file;
+
+        const dotIndex = file.name.lastIndexOf(".");
+        const baseName = dotIndex > 0 ? file.name.slice(0, dotIndex) : file.name;
+        const ext = finalBlob.type === "image/webp" ? "webp" : "jpg";
+        return new File([finalBlob], `${baseName}.${ext}`, {
+            type: finalBlob.type,
+            lastModified: Date.now(),
+        });
+    }
+
     async function loadFirebaseUploads() {
         if (!firebaseEnabled) return [];
 
@@ -625,13 +703,20 @@ async function initGallery() {
         }
     }
 
-    function handleUpload(files) {
+    async function handleUpload(files) {
         if (!files || files.length === 0) return;
 
-        Array.from(files).forEach(async (file) => {
+        for (const file of Array.from(files)) {
+            let uploadFile = file;
+            try {
+                uploadFile = await optimizeImageForUpload(file);
+            } catch (error) {
+                console.warn("Image optimization skipped:", error);
+            }
+
             const tempItem = {
-                src: URL.createObjectURL(file),
-                title: file.name,
+                src: URL.createObjectURL(uploadFile),
+                title: uploadFile.name,
                 date: formatUploadDate(new Date()),
                 category: "custom",
                 uploading: true,
@@ -642,15 +727,16 @@ async function initGallery() {
 
             if (firebaseEnabled) {
                 try {
-                    const safeName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+                    const safeName = `${Date.now()}_${uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
                     const storageRef = window.firebaseStorage.ref(`${firebaseUploadFolder}/${safeName}`);
-                    await storageRef.put(file);
+                    await storageRef.put(uploadFile);
                     tempItem.src = await storageRef.getDownloadURL();
                     delete tempItem.uploading;
                     APP.uploadedItems = await loadFirebaseUploads();
                     renderGallery(activeFilter);
                 } catch (error) {
                     console.error("Firebase upload error:", error);
+                    alert(`Upload failed: ${error.code || error.message || "Unknown error"}`);
                     tempItem.error = true;
                     delete tempItem.uploading;
                     renderGallery(activeFilter);
@@ -662,9 +748,9 @@ async function initGallery() {
                     saveUploadedItems();
                     renderGallery(activeFilter);
                 };
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(uploadFile);
             }
-        });
+        }
     }
 
     filterBtns.forEach((btn) => {

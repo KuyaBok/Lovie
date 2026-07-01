@@ -101,22 +101,12 @@
         <source src="music/YTDown_YouTube_Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Ly_Media_zgaCZOQCpp8_009_128k.mp3" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script>
         requireLogin();
-        const firebaseConfig = {
-            apiKey: "AIzaSyBB7vRHppmk0llIKhIfv7Ain3jL0chXv8U",
-            authDomain: "lovie-22c76.firebaseapp.com",
-            projectId: "lovie-22c76",
-            storageBucket: "lovie-22c76.firebasestorage.app",
-            messagingSenderId: "333538654885",
-            appId: "1:333538654885:web:58bb1f6fcdbe1b52ac6b4c",
-            measurementId: "G-G6N518Z4D2"
-        };
-
-        firebase.initializeApp(firebaseConfig);
         window.firebaseStorage = firebase.storage();
         window.FIREBASE_STORAGE_PATH = "gallery_uploads";
     </script>
