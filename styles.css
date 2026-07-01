@@ -1674,27 +1674,28 @@ body {
     position: relative;
     z-index: 10;
     text-align: center;
-    padding: 34px 24px;
+    padding: 18px 16px;
     background: rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
     margin-top: auto;
 }
 
 .footer-hearts {
-    font-size: 1.15rem;
-    margin-bottom: 10px;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
     animation: heartbeat 2s ease-in-out infinite;
 }
 
 .footer-text {
     font-family: var(--font-script);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     color: var(--rose-dark);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .footer-copyright {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     color: var(--text-light);
 }
 
@@ -2130,7 +2131,7 @@ body {
 
 /* --- Install Footer Button --- */
 .footer-install {
-    margin-top: 16px;
+    margin-top: 8px;
     display: flex;
     justify-content: center;
 }
