@@ -81,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initCountdown();
     initDaysTogether();
     initMusicPlayer();
+    initSeamlessNavigation();
     setFooterYear();
     updateNames();
     initInstallPrompt();
@@ -1236,6 +1237,96 @@ function initMusicPlayer() {
             writeState();
         }, 120);
     }
+}
+
+function initSeamlessNavigation() {
+    // Only run in the top-level page. If this page is inside an iframe,
+    // let the parent handle seamless navigation.
+    if (window.top !== window.self) return;
+
+    const navLinks = Array.from(document.querySelectorAll('a[href$=".html"]'));
+    if (!navLinks.length) return;
+
+    let seamlessFrame = document.getElementById("seamlessPageFrame");
+    if (!seamlessFrame) {
+        seamlessFrame = document.createElement("iframe");
+        seamlessFrame.id = "seamlessPageFrame";
+        seamlessFrame.style.position = "fixed";
+        seamlessFrame.style.inset = "0";
+        seamlessFrame.style.width = "100vw";
+        seamlessFrame.style.height = "100vh";
+        seamlessFrame.style.border = "0";
+        seamlessFrame.style.background = "#fff";
+        seamlessFrame.style.zIndex = "9998";
+        seamlessFrame.style.display = "none";
+        seamlessFrame.setAttribute("title", "Page Content");
+        document.body.appendChild(seamlessFrame);
+    }
+
+    const musicPlayer = document.getElementById("musicPlayer");
+    if (musicPlayer) {
+        musicPlayer.style.zIndex = "2147483647";
+    }
+
+    const normalizeHref = (href) => {
+        try {
+            const u = new URL(href, window.location.href);
+            return `${u.pathname}${u.search}${u.hash}`;
+        } catch {
+            return href;
+        }
+    };
+
+    const openInFrame = (href, shouldPushState = true) => {
+        const target = normalizeHref(href);
+        seamlessFrame.style.display = "block";
+        seamlessFrame.src = target;
+        if (shouldPushState) {
+            history.pushState({ seamless: true, href: target }, "", target);
+        }
+    };
+
+    navLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+            if (event.defaultPrevented) return;
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (link.target && link.target !== "_self") return;
+
+            event.preventDefault();
+            openInFrame(link.getAttribute("href"), true);
+        });
+    });
+
+    seamlessFrame.addEventListener("load", () => {
+        try {
+            const frameDoc = seamlessFrame.contentDocument;
+            const frameWin = seamlessFrame.contentWindow;
+            if (!frameDoc || !frameWin) return;
+
+            // Keep only one active player (the top-level one).
+            const frameAudio = frameDoc.getElementById("bgMusic");
+            if (frameAudio) frameAudio.pause();
+
+            let styleTag = frameDoc.getElementById("seamlessHostStyle");
+            if (!styleTag) {
+                styleTag = frameDoc.createElement("style");
+                styleTag.id = "seamlessHostStyle";
+                styleTag.textContent = "#musicPlayer, #bgMusic { display: none !important; }";
+                frameDoc.head.appendChild(styleTag);
+            }
+
+            // Reflect iframe URL in the address bar for shareable links.
+            const frameUrl = `${frameWin.location.pathname}${frameWin.location.search}${frameWin.location.hash}`;
+            history.replaceState({ seamless: true, href: frameUrl }, "", frameUrl);
+        } catch {
+            // Ignore access/update issues and keep navigation functional.
+        }
+    });
+
+    window.addEventListener("popstate", () => {
+        const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        openInFrame(current, false);
+    });
 }
 
 // ==========================================
