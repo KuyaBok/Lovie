@@ -1,4 +1,4 @@
-const CACHE_NAME = "love-story-cache-v4";
+const CACHE_NAME = "love-story-cache-v6";
 const ASSETS_TO_CACHE = [
   "/index.html",
   "/story.html",
@@ -14,7 +14,9 @@ const ASSETS_TO_CACHE = [
   "/login.js",
   "/letters-sync.js",
   "/manifest.json",
-  "/icons/icon.svg"
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-512-maskable.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -31,12 +33,37 @@ self.addEventListener("activate", (event) => {
           .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
   const url = new URL(event.request.url);
+
+  // Always go to network first for pages and app shell files so normal refresh
+  // picks up newly deployed content without requiring a hard refresh.
+  const isNavigation = event.request.mode === "navigate";
+  const isAppShellFile = ["/", "/index.html", "/script.js", "/styles.css", "/manifest.json", "/sw.js"].includes(url.pathname);
+  if (url.origin === location.origin && (isNavigation || isAppShellFile)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
   
   // Network first for external resources (fonts, CDN)
   if (url.origin !== location.origin || url.hostname.includes('googleapis') || url.hostname.includes('gstatic')) {
@@ -54,7 +81,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   
-  // Cache first for local assets
+  // Cache first for other local assets (images, etc.)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request);
