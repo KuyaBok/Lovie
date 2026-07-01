@@ -1455,9 +1455,17 @@ function initMusicPlayer() {
     if (!musicBtn || !audio) return;
 
     const MUSIC_STATE_KEY = "loveMusicState";
+    const MUSIC_OWNER_KEY = "loveMusicOwner";
     const DEFAULT_MUSIC_SRC = "music/YTDown_YouTube_Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Ly_Media_zgaCZOQCpp8_009_128k.mp3";
+    const OWNER_STALE_MS = 6500;
+    const OWNER_HEARTBEAT_MS = 2000;
+    const tabId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     let saveThrottle = 0;
     let resumeInteractionHandler = null;
+    let ownerHeartbeatTimer = null;
+    let syncingFromRemote = false;
+    let externalPlaying = false;
+    let shouldResume = false;
 
     // Ensure every page has a playable source even if the HTML source tag is missing.
     if (!audio.querySelector("source") && !audio.getAttribute("src")) {
@@ -1473,13 +1481,87 @@ function initMusicPlayer() {
         }
     };
 
-    const writeState = () => {
+    const readOwner = () => {
+        try {
+            const raw = localStorage.getItem(MUSIC_OWNER_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    };
+
+    const writeOwner = (ownerId) => {
+        try {
+            if (!ownerId) {
+                localStorage.removeItem(MUSIC_OWNER_KEY);
+                return;
+            }
+            localStorage.setItem(
+                MUSIC_OWNER_KEY,
+                JSON.stringify({
+                    ownerId,
+                    updatedAt: Date.now(),
+                })
+            );
+        } catch {
+            // Ignore storage failures and keep the player usable.
+        }
+    };
+
+    const isOwnerFresh = (owner) => {
+        if (!owner || !owner.ownerId || !owner.updatedAt) return false;
+        return Date.now() - Number(owner.updatedAt) < OWNER_STALE_MS;
+    };
+
+    const isOwnedByThisTab = () => {
+        const owner = readOwner();
+        return !!owner && owner.ownerId === tabId && isOwnerFresh(owner);
+    };
+
+    const canThisTabPlay = () => {
+        const owner = readOwner();
+        if (!isOwnerFresh(owner)) {
+            writeOwner(tabId);
+            return true;
+        }
+        return owner.ownerId === tabId;
+    };
+
+    const startOwnerHeartbeat = () => {
+        if (ownerHeartbeatTimer) return;
+        ownerHeartbeatTimer = window.setInterval(() => {
+            if (isOwnedByThisTab() && !audio.paused) {
+                writeOwner(tabId);
+            }
+        }, OWNER_HEARTBEAT_MS);
+    };
+
+    const stopOwnerHeartbeat = () => {
+        if (!ownerHeartbeatTimer) return;
+        clearInterval(ownerHeartbeatTimer);
+        ownerHeartbeatTimer = null;
+    };
+
+    const releaseOwnershipIfHeld = () => {
+        if (isOwnedByThisTab()) {
+            writeOwner(null);
+        }
+        stopOwnerHeartbeat();
+    };
+
+    const writeState = (override = {}) => {
+        const shouldPlayValue = override.shouldPlay ?? !audio.paused;
+        const currentTimeValue = override.currentTime ?? (Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+        const owner = readOwner();
+
         try {
             localStorage.setItem(
                 MUSIC_STATE_KEY,
                 JSON.stringify({
-                    shouldPlay: !audio.paused,
-                    currentTime: Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+                    shouldPlay: !!shouldPlayValue,
+                    currentTime: Number(currentTimeValue) || 0,
+                    ownerId: owner && isOwnerFresh(owner) ? owner.ownerId : null,
+                    updatedAt: Date.now(),
                 })
             );
         } catch {
@@ -1488,7 +1570,8 @@ function initMusicPlayer() {
     };
 
     const applyUi = (playing) => {
-        if (playing) {
+        const showAsPlaying = !!playing || externalPlaying;
+        if (showAsPlaying) {
             musicWaves.classList.add("playing");
             musicIcon.style.opacity = "0";
         } else {
@@ -1506,8 +1589,17 @@ function initMusicPlayer() {
     };
 
     const tryPlay = async () => {
+        if (!canThisTabPlay()) {
+            externalPlaying = true;
+            applyUi(false);
+            return false;
+        }
+
         try {
             await audio.play();
+            writeOwner(tabId);
+            startOwnerHeartbeat();
+            externalPlaying = false;
             return true;
         } catch {
             applyUi(false);
@@ -1544,7 +1636,7 @@ function initMusicPlayer() {
     };
 
     const savedState = readState();
-    let shouldResume = !!savedState.shouldPlay;
+    shouldResume = !!savedState.shouldPlay;
     const resumeAt = Number(savedState.currentTime) || 0;
 
     audio.addEventListener("loadedmetadata", () => {
@@ -1554,13 +1646,30 @@ function initMusicPlayer() {
     });
 
     audio.addEventListener("play", () => {
+        if (!canThisTabPlay()) {
+            syncingFromRemote = true;
+            audio.pause();
+            syncingFromRemote = false;
+            externalPlaying = true;
+            applyUi(false);
+            return;
+        }
+
+        writeOwner(tabId);
+        startOwnerHeartbeat();
+        externalPlaying = false;
+        shouldResume = true;
         applyUi(true);
         clearResumeOnGesture();
         writeState();
     });
 
     audio.addEventListener("pause", () => {
-        applyUi(false);
+        applyUi(!audio.paused);
+        if (syncingFromRemote) return;
+
+        shouldResume = false;
+        releaseOwnershipIfHeld();
         writeState();
     });
 
@@ -1575,7 +1684,7 @@ function initMusicPlayer() {
     document.addEventListener("visibilitychange", async () => {
         if (!document.hidden && shouldResume && audio.paused) {
             const played = await tryPlay();
-            shouldResume = true;
+            shouldResume = played || externalPlaying;
             if (!played) armResumeOnGesture();
         }
     });
@@ -1583,16 +1692,91 @@ function initMusicPlayer() {
     window.addEventListener("pageshow", async () => {
         if (shouldResume && audio.paused) {
             const played = await tryPlay();
-            shouldResume = true;
+            shouldResume = played || externalPlaying;
             if (!played) armResumeOnGesture();
         }
     });
 
-    window.addEventListener("pagehide", writeState);
-    window.addEventListener("beforeunload", writeState);
+    const syncFromSharedState = async () => {
+        const state = readState();
+        const owner = readOwner();
+        const ownerIsFresh = isOwnerFresh(owner);
+        const ownerIsThisTab = ownerIsFresh && owner.ownerId === tabId;
+        const shouldPlayShared = !!state.shouldPlay;
+        const sharedTime = Number(state.currentTime) || 0;
+
+        shouldResume = shouldPlayShared;
+
+        if (!shouldPlayShared) {
+            externalPlaying = false;
+            if (!audio.paused) {
+                syncingFromRemote = true;
+                audio.pause();
+                syncingFromRemote = false;
+            }
+            releaseOwnershipIfHeld();
+            applyUi(false);
+            return;
+        }
+
+        // Another tab currently owns playback: mirror "playing" UI only.
+        if (ownerIsFresh && !ownerIsThisTab) {
+            externalPlaying = true;
+            if (!audio.paused) {
+                syncingFromRemote = true;
+                audio.pause();
+                syncingFromRemote = false;
+            }
+            applyUi(false);
+            return;
+        }
+
+        // This tab is allowed to own playback.
+        externalPlaying = false;
+        if (sharedTime > 0 && Number.isFinite(audio.duration) && audio.duration > 0) {
+            const maxTime = Math.max(0, audio.duration - 0.25);
+            if (Math.abs(audio.currentTime - sharedTime) > 1.25) {
+                audio.currentTime = Math.min(sharedTime, maxTime);
+            }
+        }
+
+        if (audio.paused) {
+            const played = await tryPlay();
+            if (!played) armResumeOnGesture();
+        }
+
+        applyUi(!audio.paused);
+    };
+
+    window.addEventListener("storage", (event) => {
+        if (event.key !== MUSIC_STATE_KEY && event.key !== MUSIC_OWNER_KEY) return;
+        syncFromSharedState();
+    });
+
+    window.addEventListener("pagehide", () => {
+        writeState();
+        releaseOwnershipIfHeld();
+    });
+    window.addEventListener("beforeunload", () => {
+        writeState();
+        releaseOwnershipIfHeld();
+    });
 
     musicBtn.addEventListener("click", async () => {
+        // If music is active in another tab/page, one tap here pauses it globally.
+        if (audio.paused && externalPlaying) {
+            externalPlaying = false;
+            shouldResume = false;
+            releaseOwnershipIfHeld();
+            writeState({ shouldPlay: false });
+            applyUi(false);
+            return;
+        }
+
         if (audio.paused) {
+            writeOwner(tabId);
+            startOwnerHeartbeat();
+            externalPlaying = false;
             shouldResume = true;
             const played = await tryPlay();
             if (!played) armResumeOnGesture();
@@ -1601,18 +1785,22 @@ function initMusicPlayer() {
         }
 
         shouldResume = false;
+        externalPlaying = false;
         clearResumeOnGesture();
         audio.pause();
+        releaseOwnershipIfHeld();
         writeState();
     });
 
+    // Mirror current global state immediately so all pages show the same status.
+    syncFromSharedState();
     applyUi(!audio.paused);
 
     // After navigation to another page, resume from prior playback state if possible.
     if (shouldResume) {
         setTimeout(async () => {
             const played = await tryPlay();
-            shouldResume = true;
+            shouldResume = played || externalPlaying;
             if (!played) armResumeOnGesture();
             writeState();
         }, 120);
