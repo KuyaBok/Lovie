@@ -174,6 +174,10 @@ function initAppreciation() {
                         `
                         : "";
                     const ownerLabel = `By ${escapeHtml(getOwnerDisplayName(item.createdBy))}`;
+                    const freeformDisplay = getDisplayText(
+                        item.freeformText,
+                        "No freeform content yet."
+                    );
 
                     return `
                         <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
@@ -186,7 +190,7 @@ function initAppreciation() {
                                     <div class="letter-from">${escapeHtml(item.from)}</div>
                                     <div class="letter-date">${escapeHtml(item.date)}</div>
                                 </div>
-                                <div class="letter-content freeform-content">${escapeHtml(item.freeformText)}</div>
+                                <div class="letter-content freeform-content">${escapeHtml(freeformDisplay)}</div>
                             </div>
                         </div>
                     `;
@@ -201,6 +205,14 @@ function initAppreciation() {
                     `
                     : "";
                 const ownerLabel = `By ${escapeHtml(getOwnerDisplayName(item.createdBy))}`;
+                const sourceDisplay = getDisplayText(
+                    item.sourceText,
+                    `No ${meta.sourceLabel.toLowerCase()} content yet.`
+                );
+                const responseDisplay = getDisplayText(
+                    item.responseText,
+                    "No response/appreciation yet."
+                );
 
                 return `
                     <div class="appreciation-card" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
@@ -214,12 +226,12 @@ function initAppreciation() {
                                 <div class="letter-date">${escapeHtml(item.date)}</div>
                             </div>
                             <span class="entry-subheading">${meta.sourceLabel}</span>
-                            <div class="letter-content">${escapeHtml(item.sourceText)}</div>
+                            <div class="letter-content">${escapeHtml(sourceDisplay)}</div>
                         </div>
                         <div class="response-given">
                             <div class="letter-icon">💝</div>
                             <span class="response-label">${meta.responseLabel}</span>
-                            <div class="letter-content response-content">${escapeHtml(item.responseText)}</div>
+                            <div class="letter-content response-content">${escapeHtml(responseDisplay)}</div>
                         </div>
                     </div>
                 `;
@@ -366,23 +378,29 @@ function normalizeAppreciationEntry(item) {
 
     if (item.type && TYPE_META[item.type]) {
         if (item.type === "freeform") {
-            if (!item.freeformText) return null;
+            const freeformText =
+                item.freeformText || item.text || item.freeform || "";
+            if (!freeformText || !String(freeformText).trim()) return null;
             return {
                 type: "freeform",
                 from: item.from || "From: You",
                 date: item.date || "A moment in time",
-                freeformText: item.freeformText,
+                freeformText,
                 createdBy: item.createdBy || null,
             };
         }
 
-        if (!item.sourceText || !item.responseText) return null;
+        const sourceText =
+            item.sourceText || item.letterText || item.letter || item.actionText || "";
+        const responseText =
+            item.responseText || item.appreciationText || item.response || "";
+        if (!String(sourceText).trim() || !String(responseText).trim()) return null;
         return {
             type: item.type,
             from: item.from || "From: You",
             date: item.date || "A moment in time",
-            sourceText: item.sourceText,
-            responseText: item.responseText,
+            sourceText,
+            responseText,
             createdBy: item.createdBy || null,
         };
     }
@@ -410,6 +428,11 @@ function escapeHtml(value) {
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;")
         .replace(/\n/g, "<br>");
+}
+
+function getDisplayText(value, fallback) {
+    const text = String(value || "").trim();
+    return text || fallback;
 }
 
 function getOwnerDisplayName(owner) {
