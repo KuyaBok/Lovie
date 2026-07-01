@@ -178,12 +178,9 @@ function initAppreciation() {
                         sanitizeEntryText(item.freeformText),
                         "No freeform content yet."
                     );
-                    const cardModeClass = canManageEntry(item)
-                        ? " appreciation-card-manageable"
-                        : "";
 
                     return `
-                        <div class="appreciation-card${cardModeClass}" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        <div class="appreciation-card" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                             ${actionButtons}
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
@@ -216,12 +213,9 @@ function initAppreciation() {
                     sanitizeEntryText(item.responseText),
                     "No response/appreciation yet."
                 );
-                const cardModeClass = canManageEntry(item)
-                    ? " appreciation-card-manageable"
-                    : "";
 
                 return `
-                    <div class="appreciation-card${cardModeClass}" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                    <div class="appreciation-card" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                         ${actionButtons}
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
@@ -303,18 +297,6 @@ function initAppreciation() {
                 deleteEntry(index);
             }
             return;
-        }
-
-        const card = event.target.closest(".appreciation-card");
-        if (!card) return;
-
-        const index = Number(card.dataset.index);
-        if (!Number.isInteger(index) || index < 0 || index >= entries.length) {
-            return;
-        }
-
-        if (canManageEntry(entries[index])) {
-            openEditor(index);
         }
     });
 

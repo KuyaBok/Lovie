@@ -2026,6 +2026,10 @@ body {
     gap: 8px;
 }
 
+.appreciation-form .form-row.hidden {
+    display: none;
+}
+
 .appreciation-form .full-row {
     grid-column: 1 / -1;
 }
