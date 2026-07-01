@@ -107,7 +107,7 @@ function initAppreciation() {
         renderEntries();
     }
 
-    function initAppreciationRealtime() {
+    function initAppreciationRealtime(localEntries) {
         if (!window.firebase || typeof firebase.database !== "function") {
             return false;
         }
@@ -118,6 +118,8 @@ function initAppreciation() {
         }
 
         appreciationRef = db.ref(APPRECIATION_DB_PATH);
+        let hasAttemptedSeed = false;
+
         appreciationRef.on("value", (snapshot) => {
             const syncedEntries = [];
 
@@ -131,10 +133,59 @@ function initAppreciation() {
                 }
             });
 
+            if (
+                syncedEntries.length === 0 &&
+                localEntries.length > 0 &&
+                !hasAttemptedSeed
+            ) {
+                hasAttemptedSeed = true;
+                seedLocalEntriesToFirebase(localEntries);
+                setEntries(localEntries);
+                return;
+            }
+
             setEntries(syncedEntries);
+        }, (error) => {
+            console.error("Appreciation realtime read failed:", error);
+            setEntries(localEntries);
         });
 
         return true;
+    }
+
+    function seedLocalEntriesToFirebase(localEntries) {
+        if (!appreciationRef || !Array.isArray(localEntries) || localEntries.length === 0) {
+            return;
+        }
+
+        localEntries.forEach((entry) => {
+            const normalized = normalizeAppreciationEntry(entry);
+            if (!normalized) return;
+
+            const existingId =
+                normalized.id && !String(normalized.id).startsWith("local-")
+                    ? normalized.id
+                    : null;
+            const id = existingId || appreciationRef.push().key;
+            if (!id) return;
+
+            appreciationRef.child(id).set(
+                {
+                    ...normalized,
+                    id,
+                    createdAt: normalized.createdAt || Date.now(),
+                    timestamp:
+                        normalized.timestamp ||
+                        new Date(normalized.createdAt || Date.now()).toISOString(),
+                    updatedAt: Date.now(),
+                },
+                (error) => {
+                    if (error) {
+                        console.error("Failed to seed local appreciation entry:", error);
+                    }
+                }
+            );
+        });
     }
 
     function getEntryOwner(item) {
@@ -318,7 +369,7 @@ function initAppreciation() {
         if (!item || !canManageEntry(item)) return;
         if (!window.confirm("Delete this appreciation entry?")) return;
 
-        if (appreciationRef && item.id) {
+        if (appreciationRef && item.id && !String(item.id).startsWith("local-")) {
             appreciationRef.child(item.id).remove((error) => {
                 if (error) {
                     console.error("Failed to delete appreciation entry:", error);
@@ -421,7 +472,12 @@ function initAppreciation() {
             appreciationRef.child(entry.id).set(entry, (error) => {
                 if (error) {
                     console.error("Failed to save appreciation entry:", error);
-                    alert("Failed to save entry. Please try again.");
+                    if (editingIndex >= 0) {
+                        entries[editingIndex] = entry;
+                        setEntries([...entries]);
+                    } else {
+                        setEntries([entry, ...entries]);
+                    }
                 }
             });
         } else if (editingIndex >= 0) {
@@ -435,9 +491,11 @@ function initAppreciation() {
     });
 
     setActiveType("letters");
-    const realtimeEnabled = initAppreciationRealtime();
+    const localEntries = loadAppreciationEntries();
+    setEntries(localEntries);
+    const realtimeEnabled = initAppreciationRealtime(localEntries);
     if (!realtimeEnabled) {
-        setEntries(loadAppreciationEntries());
+        setEntries(localEntries);
     }
 }
 

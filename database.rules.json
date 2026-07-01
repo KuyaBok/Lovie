@@ -10,6 +10,10 @@
     "galleryItems": {
       ".read": true,
       ".write": true
+    },
+    "appreciations": {
+      ".read": true,
+      ".write": true
     }
   }
 }
