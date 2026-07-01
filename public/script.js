@@ -131,63 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // PWA diagnostics overlay removed (no longer used)
 
-// Add a small Reset Install State button to the footer for quick testing
-function addResetInstallButton() {
-    try {
-        const footer = document.querySelector('.footer');
-        if (!footer) return;
-        if (document.getElementById('resetInstallBtn')) return;
-        const btn = document.createElement('button');
-        btn.id = 'resetInstallBtn';
-        btn.textContent = 'Reset Install State';
-        btn.style.marginTop = '8px';
-        btn.style.padding = '8px 12px';
-        btn.style.fontSize = '12px';
-        btn.style.borderRadius = '8px';
-        btn.style.border = 'none';
-        btn.style.cursor = 'pointer';
-        btn.style.background = 'rgba(255,255,255,0.9)';
-        btn.style.color = '#7a3b45';
-        btn.addEventListener('click', async () => {
-            btn.disabled = true;
-            btn.textContent = 'Resetting...';
-            console.log('Resetting install state: unregistering SWs and clearing storage');
-            if ('serviceWorker' in navigator) {
-                try {
-                    const regs = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(regs.map(r => r.unregister()));
-                    console.log('Service workers unregistered', regs.length);
-                } catch (e) {
-                    console.warn('Error unregistering service workers', e);
-                }
-            }
-            try {
-                if (navigator.storage && navigator.storage.clear) {
-                    await navigator.storage.clear();
-                    console.log('Storage cleared');
-                } else {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    console.log('Local/session storage cleared');
-                }
-            } catch (e) {
-                console.warn('Error clearing storage', e);
-            }
-            location.reload();
-        });
-
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex';
-        wrapper.style.justifyContent = 'center';
-        wrapper.appendChild(btn);
-        footer.appendChild(wrapper);
-    } catch (e) {
-        console.error('Could not add reset button', e);
-    }
-}
-
-setTimeout(addResetInstallButton, 1000);
-
 // ==========================================
 // Update Names
 // ==========================================
