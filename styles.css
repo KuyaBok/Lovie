@@ -2119,6 +2119,10 @@ body {
     opacity: 0.85;
 }
 
+.appreciation-details {
+    display: none;
+}
+
 .card-toggle-hint[hidden] {
     display: none;
 }

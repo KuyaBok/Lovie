@@ -293,7 +293,7 @@ function initAppreciation() {
                                     <div class="letter-from">${escapeHtml(item.from)}</div>
                                     <div class="letter-date">${escapeHtml(item.date)}</div>
                                 </div>
-                                <div class="appreciation-details" hidden>
+                                <div class="appreciation-details">
                                     <div class="letter-content freeform-content">${escapeHtml(freeformDisplay)}</div>
                                 </div>
                             </div>
@@ -331,7 +331,7 @@ function initAppreciation() {
                                 <div class="letter-from">${escapeHtml(item.from)}</div>
                                 <div class="letter-date">${escapeHtml(item.date)}</div>
                             </div>
-                            <div class="appreciation-details" hidden>
+                            <div class="appreciation-details">
                                 <span class="entry-subheading">${meta.sourceLabel}</span>
                                 <div class="letter-content">${escapeHtml(sourceDisplay)}</div>
                                 <div class="response-given">
@@ -345,6 +345,24 @@ function initAppreciation() {
                 `;
             })
             .join("");
+
+        setCardOpen(null);
+    }
+
+    function setCardOpen(cardToOpen) {
+        const cards = container.querySelectorAll(".appreciation-card");
+        cards.forEach((card) => {
+            const details = card.querySelector(".appreciation-details");
+            const hint = card.querySelector(".card-toggle-hint");
+            const shouldOpen = cardToOpen && card === cardToOpen;
+
+            if (details) {
+                details.style.display = shouldOpen ? "block" : "none";
+            }
+            if (hint) {
+                hint.style.display = shouldOpen ? "none" : "block";
+            }
+        });
     }
 
     function openEditor(index) {
@@ -422,22 +440,11 @@ function initAppreciation() {
         const clickedDetails = card.querySelector(".appreciation-details");
         if (!clickedDetails) return;
 
-        const wasOpen = !clickedDetails.hasAttribute("hidden");
-        const allDetails = container.querySelectorAll(".appreciation-details");
-        allDetails.forEach((details) => {
-            details.setAttribute("hidden", "");
-        });
-        const allHints = container.querySelectorAll(".card-toggle-hint");
-        allHints.forEach((hint) => {
-            hint.removeAttribute("hidden");
-        });
-
+        const wasOpen = clickedDetails.style.display === "block";
         if (!wasOpen) {
-            clickedDetails.removeAttribute("hidden");
-            const hint = card.querySelector(".card-toggle-hint");
-            if (hint) {
-                hint.setAttribute("hidden", "");
-            }
+            setCardOpen(card);
+        } else {
+            setCardOpen(null);
         }
     });
 
