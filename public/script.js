@@ -920,7 +920,29 @@ async function initGallery() {
         });
     });
 
-    uploadBtn.addEventListener("click", () => uploadInput.click());
+    function openFilePicker() {
+        if (!uploadInput) return;
+        try {
+            if (typeof uploadInput.showPicker === "function") {
+                uploadInput.showPicker();
+                return;
+            }
+        } catch (error) {
+            console.debug("showPicker failed, falling back to click:", error);
+        }
+        uploadInput.click();
+    }
+
+    uploadBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        openFilePicker();
+    });
+    uploadBtn.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openFilePicker();
+        }
+    });
     uploadInput.addEventListener("change", (event) => {
         handleUpload(event.target.files);
         uploadInput.value = "";
