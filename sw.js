@@ -1,4 +1,4 @@
-const CACHE_NAME = "love-story-cache-v4";
+const CACHE_NAME = "love-story-cache-v5";
 const ASSETS_TO_CACHE = [
   "/index.html",
   "/story.html",
@@ -14,7 +14,9 @@ const ASSETS_TO_CACHE = [
   "/login.js",
   "/letters-sync.js",
   "/manifest.json",
-  "/icons/icon.svg"
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-512-maskable.png"
 ];
 
 self.addEventListener("install", (event) => {
