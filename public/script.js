@@ -102,11 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Log if browser fires the beforeinstallprompt event (helps debug why deferred prompt is null)
-window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('DEBUG: beforeinstallprompt event fired:', e);
-});
-
 // PWA diagnostics overlay removed (no longer used)
 
 // Add a small Reset Install State button to the footer for quick testing
