@@ -92,7 +92,6 @@ function initAppreciation() {
     const currentUser = currentUserRaw.toLowerCase();
     let activeType = "letters";
     let editingIndex = -1;
-    let expandedEntryId = null;
 
     function sortEntries(list) {
         return list.sort((a, b) => {
@@ -277,11 +276,8 @@ function initAppreciation() {
                         "No freeform content yet."
                     );
 
-                    const isOpen = expandedEntryId && item.id === expandedEntryId;
-                    const collapsedClass = isOpen ? "" : " is-collapsed";
-
                     return `
-                        <div class="appreciation-card${collapsedClass}" data-index="${index}" data-entry-id="${escapeHtml(item.id || "")}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                        <div class="appreciation-card" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                             ${actionButtons}
                             <div class="letter-received freeform-received">
                                 <div class="letter-icon">${meta.icon}</div>
@@ -292,7 +288,7 @@ function initAppreciation() {
                                     <div class="letter-from">${escapeHtml(item.from)}</div>
                                     <div class="letter-date">${escapeHtml(item.date)}</div>
                                 </div>
-                                <div class="letter-content freeform-content">${escapeHtml(freeformDisplay)}</div>
+                                <div class="letter-content freeform-content card-expandable">${escapeHtml(freeformDisplay)}</div>
                             </div>
                         </div>
                     `;
@@ -316,11 +312,8 @@ function initAppreciation() {
                     "No response/appreciation yet."
                 );
 
-                const isOpen = expandedEntryId && item.id === expandedEntryId;
-                const collapsedClass = isOpen ? "" : " is-collapsed";
-
                 return `
-                    <div class="appreciation-card${collapsedClass}" data-index="${index}" data-entry-id="${escapeHtml(item.id || "")}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
+                    <div class="appreciation-card" data-index="${index}" style="animation: fadeInUp 1s ease ${index * 0.1}s both;">
                         ${actionButtons}
                         <div class="letter-received">
                             <div class="letter-icon">${meta.icon}</div>
@@ -331,10 +324,10 @@ function initAppreciation() {
                                 <div class="letter-from">${escapeHtml(item.from)}</div>
                                 <div class="letter-date">${escapeHtml(item.date)}</div>
                             </div>
-                            <span class="entry-subheading">${meta.sourceLabel}</span>
-                            <div class="letter-content">${escapeHtml(sourceDisplay)}</div>
+                            <span class="entry-subheading card-expandable">${meta.sourceLabel}</span>
+                            <div class="letter-content card-expandable">${escapeHtml(sourceDisplay)}</div>
                         </div>
-                        <div class="response-given">
+                        <div class="response-given card-expandable">
                             <div class="letter-icon">💝</div>
                             <span class="response-label">${meta.responseLabel}</span>
                             <div class="letter-content response-content">${escapeHtml(responseDisplay)}</div>
@@ -417,11 +410,13 @@ function initAppreciation() {
         const card = event.target.closest(".appreciation-card");
         if (!card) return;
 
-        const entryId = card.dataset.entryId || null;
-        if (!entryId) return;
+        const wasOpen = card.classList.contains("is-open");
+        const allCards = container.querySelectorAll(".appreciation-card");
+        allCards.forEach((entryCard) => entryCard.classList.remove("is-open"));
 
-        expandedEntryId = expandedEntryId === entryId ? null : entryId;
-        renderEntries();
+        if (!wasOpen) {
+            card.classList.add("is-open");
+        }
     });
 
     saveBtn.addEventListener("click", () => {

@@ -2119,13 +2119,15 @@ body {
     opacity: 0.85;
 }
 
-.appreciation-card.is-collapsed .entry-subheading,
-.appreciation-card.is-collapsed .letter-content,
-.appreciation-card.is-collapsed .response-given {
+.appreciation-card .card-expandable {
     display: none;
 }
 
-.appreciation-card:not(.is-collapsed) .card-toggle-hint {
+.appreciation-card.is-open .card-expandable {
+    display: block;
+}
+
+.appreciation-card.is-open .card-toggle-hint {
     display: none;
 }
 
