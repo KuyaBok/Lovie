@@ -5,15 +5,17 @@ const VALID_CREDENTIALS = {
 };
 
 function getCurrentUser() {
-    return sessionStorage.getItem('currentUser');
+    return sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
 }
 
 function setCurrentUser(username) {
     sessionStorage.setItem('currentUser', username);
+    localStorage.setItem('currentUser', username);
 }
 
 function logout() {
     sessionStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 }
 

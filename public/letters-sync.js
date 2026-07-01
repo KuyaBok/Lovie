@@ -11,8 +11,14 @@ function initLettersSync() {
         return;
     }
 
+    const db = window.database || firebase.database();
+    if (!db) {
+        console.error('Realtime database instance is not initialized');
+        return;
+    }
+
     // Initialize Firebase reference
-    lettersRef = database.ref('letters');
+    lettersRef = db.ref('letters');
 
     // Load existing letters and listen for changes
     lettersRef.on('value', (snapshot) => {
@@ -35,6 +41,11 @@ function addLetter(seal, letterFrom, letterDate, letterText) {
     
     if (!currentUser) {
         alert('Please login first');
+        return;
+    }
+
+    if (!lettersRef) {
+        alert('Letters sync is still loading. Please wait a moment and try again.');
         return;
     }
 
