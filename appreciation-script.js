@@ -720,6 +720,15 @@ function initNavigation() {
     const mobileLinks = document.querySelectorAll(".mobile-link");
     const navLinks = document.querySelectorAll(".nav-link");
 
+    if (!nav || !toggle || !mobileMenu) {
+        return;
+    }
+
+    if (nav.dataset.navigationInitialized === "true") {
+        return;
+    }
+    nav.dataset.navigationInitialized = "true";
+
     window.addEventListener("scroll", () => {
         if (window.scrollY > 80) {
             nav.classList.add("scrolled");
