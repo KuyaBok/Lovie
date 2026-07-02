@@ -2096,6 +2096,7 @@ body {
     gap: 40px;
     max-width: 1200px;
     margin: 0 auto;
+    align-items: start;
 }
 
 .appreciation-card {
